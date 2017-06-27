@@ -42,7 +42,6 @@
 #include <string>
 #include <type_traits>
 
-
 // Forward declaration of TFC Core Language Features
 namespace TFC {
 
@@ -262,6 +261,17 @@ inline void TFCAssertZero(int value, char const* message = "")
 
 long long GetCurrentTimeMillis();
 
+template<typename T>
+class ReferenceWrapper : public ObjectClass
+{
+public:
+	ReferenceWrapper(T& ref) : ref(ref) { }
+	T& Get() { return ref; }
+	virtual ~ReferenceWrapper() { }
+private:
+	T& ref;
+};
+
 namespace Core {
 
 /**
@@ -373,6 +383,22 @@ template<typename T>
 TFC::ManagedClass::SafePointer TFC::ManagedClass::GetSafePointerFrom(T* what)
 {
 	return TFC::ManagedClass::SafePointerGetter<T>::GetSafePointer(what);
+}
+
+template<typename T>
+T wrapper_cast(TFC::ObjectClass& obj)
+{
+	auto tmpPtr = dynamic_cast<TFC::ReferenceWrapper<typename std::remove_reference<T>::type>*>(&obj);
+	if(tmpPtr)
+	{
+		return tmpPtr->Get();
+	}
+	else
+	{
+		std::string msg { "Expected type: " };
+		msg.append(typeid(obj).name());
+		throw TFC::TFCException(msg);
+	}
 }
 
 

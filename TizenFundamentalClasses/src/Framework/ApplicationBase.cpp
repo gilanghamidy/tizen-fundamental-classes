@@ -22,6 +22,8 @@
  */
 
 #include <dlog.h>
+#include <iostream>
+#include <fstream>
 
 #include "TFC/Framework/Application.h"
 
@@ -103,9 +105,13 @@ SimpleReadOnlyProperty<ApplicationBase, char const*> ApplicationBase::ResourcePa
 ApplicationBase* ApplicationBase::currentInstance = nullptr;
 char const*		 ApplicationBase::resourcePath = nullptr;
 
+std::unique_ptr<std::ofstream> tfcout;
+
 int ApplicationBase::Main(ApplicationBase* app, int argc, char* argv[])
 try
 {
+	tfcout.reset(new std::ofstream("/tmp/tfcerr", std::ios::out));
+
 	ApplicationBase::currentInstance = app;
 	ApplicationBase::resourcePath = app_get_resource_path();
 
@@ -138,6 +144,12 @@ try
 catch(TFC::TFCException& ex)
 {
 	dlog_print(DLOG_ERROR, argv[0], "Exception occured (%s) => %s; Stack trace %s", typeid(ex).name(), ex.what(), ex.GetStackTrace().c_str());
+
+	*tfcout << "Unhandled Exception: " << typeid(ex).name() << '\n' << ex.what() << '\n';
+	*tfcout << "Stack trace: " << '\n';
+	*tfcout << ex.GetStackTrace() << '\n';
+	*tfcout << "END\n";
+
 	throw;
 }
 
@@ -166,6 +178,7 @@ LIBAPI void ApplicationBase::ApplicationTerminate()
 
 LIBAPI void ApplicationBase::LanguageChanged(app_event_info_h event_info, const char* locale)
 {
+
 }
 
 LIBAPI void ApplicationBase::OrientationChanged(app_event_info_h event_info)

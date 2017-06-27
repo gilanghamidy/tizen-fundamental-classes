@@ -70,6 +70,7 @@ void DispatchQueue::Dispatch(std::function<void()>&& task)
 }
 
 void DispatchQueue::Implementation::MessageLoop()
+try
 {
 	while(true)
 	{
@@ -90,4 +91,9 @@ void DispatchQueue::Implementation::MessageLoop()
 		if(runThis)
 			runThis();
 	}
+}
+catch(TFC::TFCException const& ex)
+{
+	dlog_print(DLOG_ERROR, "TFC-Debug", "Exception on MessageLoop: %s - Stack trace %s", ex.what(), ex.GetStackTrace().c_str());
+	throw;
 }

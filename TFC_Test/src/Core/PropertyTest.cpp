@@ -95,8 +95,10 @@ namespace {
 		Property<SomeData*>::Get<&PropertyComponent::GetDataPtr>
 						   ::Set<&PropertyComponent::SetDataPtr> DataPtr;
 
+		/*
 		Property<SomeData const*>::Get<
 			&PropertyComponent::GetDataPtrConst>::Set<&PropertyComponent::SetDataPtr> DataPtrConst;
+		*/
 
 		std::string const& GetValC() const;
 		void SetValC(std::string const& valC);
@@ -121,7 +123,7 @@ namespace {
 	}
 
 	PropertyComponent::PropertyComponent() :
-		A(this), Data(this), DataRef(this), DataPtrConst(this), DataPtr(this), a(0), data({0, 0}), aPtr(nullptr), APtr(this), ValC(this)
+		A(this), Data(this), DataRef(this), DataPtr(this), a(0), data({0, 0}), aPtr(nullptr), APtr(this), ValC(this)
 	{
 
 	}
