@@ -31,7 +31,6 @@ namespace Containers {
 				virtual void Decrement() = 0;
 				virtual std::unique_ptr<IteratorImpl> Clone() const = 0;
 
-
 				friend class Iterator;
 			};
 
@@ -61,6 +60,8 @@ namespace Containers {
 
 		Iterator begin() { return { GetIteratorImplBegin() }; }
 		Iterator end() { return { GetIteratorImplEnd() }; }
+
+		virtual bool IsStableKeySupported() = 0;
 
 	protected:
 		virtual std::unique_ptr<Iterator::IteratorImpl> GetIteratorImplBegin() = 0;
