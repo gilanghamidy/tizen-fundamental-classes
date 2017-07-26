@@ -261,15 +261,44 @@ inline void TFCAssertZero(int value, char const* message = "")
 
 long long GetCurrentTimeMillis();
 
+class ReferenceWrapperBase : public ObjectClass
+{
+public:
+	virtual ~ReferenceWrapperBase() { }
+	virtual std::unique_ptr<ReferenceWrapperBase> Clone() = 0;
+};
+
 template<typename T>
-class ReferenceWrapper : public ObjectClass
+class ReferenceWrapper : public ReferenceWrapperBase
 {
 public:
 	ReferenceWrapper(T& ref) : ref(ref) { }
 	T& Get() { return ref; }
 	virtual ~ReferenceWrapper() { }
+	virtual std::unique_ptr<ReferenceWrapperBase> Clone() override
+	{
+		return std::unique_ptr<ReferenceWrapperBase> { new ReferenceWrapper<T> { ref } };
+	}
 private:
 	T& ref;
+};
+
+class ObjectReferenceWrapper : public ReferenceWrapperBase
+{
+public:
+	ObjectReferenceWrapper(ObjectClass& ref) : ref(ref) { }
+
+	template<typename T>
+	T& Get() { return dynamic_cast<T&>(ref); }
+
+	virtual ~ObjectReferenceWrapper() { }
+	virtual std::unique_ptr<ReferenceWrapperBase> Clone() override
+	{
+		return std::unique_ptr<ReferenceWrapperBase> { new ObjectReferenceWrapper { ref } };
+	}
+
+private:
+	ObjectClass& ref;
 };
 
 namespace Core {

@@ -41,7 +41,7 @@ namespace UI {
 	protected:
 		WidgetBase(Evas_Object* widget);
 		Evas_Object* const& widgetRoot;
-		virtual ~WidgetBase();
+		virtual ~WidgetBase() = 0;
 
 	private:
 		static void Deallocator(void* userData, Evas_Object* src, Evas* evas, void* eventData);

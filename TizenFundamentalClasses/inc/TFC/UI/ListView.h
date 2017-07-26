@@ -13,23 +13,6 @@
 
 namespace TFC {
 namespace UI {
-	class ContainerWidgetBase :
-		public WidgetBase,
-		EventEmitterClass<ContainerWidgetBase>,
-		PropertyClass<ContainerWidgetBase>
-	{
-	public:
-		ContainerWidgetBase();
-
-	protected:
-		struct ContainerWidgetItem
-		{
-
-		};
-
-	private:
-		std::shared_ptr<Containers::ContainerBase> itemsSource;
-	};
 
 	class ListViewBase :
 		public ContainerWidgetBase,

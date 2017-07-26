@@ -248,7 +248,7 @@ struct TFC::Core::PropertyObject<TDefining, TValue*>
 	VALUE_TYPE Get##PROPERTY_NAME() const;\
 	void Set##PROPERTY_NAME(VALUE_TYPE const& value);\
 	public:\
-	Property<VALUE_TYPE>::Get<&DECLARER::Get##PROPERTY_NAME>::Set<&DECLARER::Set##PROPERTY_NAME> PROPERTY_NAME { this }
+	PropertyClass<DECLARER>::Property<VALUE_TYPE>::Get<&DECLARER::Get##PROPERTY_NAME>::Set<&DECLARER::Set##PROPERTY_NAME> PROPERTY_NAME { this }
 
 
 #endif /* PROPERTY_INC_H_ */
