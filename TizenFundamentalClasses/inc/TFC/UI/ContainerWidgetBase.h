@@ -11,6 +11,7 @@
 #include <memory>
 #include <deque>
 #include <map>
+#include <list>
 #include <TFC/Containers/ContainerBase.h>
 #include <TFC/UI/WidgetBase.h>
 
@@ -36,7 +37,7 @@ namespace UI {
 			bool selected;
 		};
 
-		virtual Elm_Object_Item* AddItem(ObjectClass& obj, Elm_Object_Item* after) = 0;
+		virtual Elm_Object_Item* AddItem(TFC::ReferenceWrapperBase& obj, Elm_Object_Item* after) = 0;
 		virtual void RemoveItem(Elm_Object_Item* item) = 0;
 
 		void SetSelected(Elm_Object_Item* theItem, bool selected);
@@ -44,9 +45,14 @@ namespace UI {
 
 	private:
 		std::shared_ptr<Containers::ContainerBase> itemsSource;
-		std::map<void*, ContainerWidgetItem> listItems;
-		std::map<Elm_Object_Item*, ContainerWidgetItem*> itemIndex;
-		std::deque<void*> selectedItems;
+		std::list<ContainerWidgetItem> internalItems;
+		std::map<void*, ContainerWidgetItem*> indexBySource;
+		std::map<Elm_Object_Item*, ContainerWidgetItem*> indexByObjectItem;
+		std::deque<ContainerWidgetItem*> selectedItems;
+		TFC::Containers::ObservableContainerBase* observableCollection { nullptr };
+
+		void OnCollectionItemInserted(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ObservableContainerBase::ItemEventArgs args);
+		void OnCollectionItemRemoved(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ObservableContainerBase::ItemEventArgs args);
 	};
 
 }}

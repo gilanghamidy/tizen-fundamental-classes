@@ -60,8 +60,7 @@ namespace Containers {
 
 		Iterator begin() { return { GetIteratorImplBegin() }; }
 		Iterator end() { return { GetIteratorImplEnd() }; }
-
-		virtual bool IsStableKeySupported() = 0;
+		virtual bool Empty() = 0;
 
 	protected:
 		virtual std::unique_ptr<Iterator::IteratorImpl> GetIteratorImplBegin() = 0;

@@ -201,6 +201,11 @@ namespace Containers {
 			return std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl(this->container.end()) };
 		}
 
+		virtual bool Empty() override
+		{
+			return this->container.empty();
+		}
+
 	private:
 		TContainer container;
 	};
