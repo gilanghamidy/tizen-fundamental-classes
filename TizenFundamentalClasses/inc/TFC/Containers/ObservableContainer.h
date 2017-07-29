@@ -9,27 +9,15 @@
 #define TFC_CONTAINERS_OBSERVABLECONTAINER_H_
 
 #include "TFC/Containers/ContainerBase.h"
+#include <TFC/Core/Metaprogramming.h>
 #include <list>
 #include <set>
 
 namespace TFC {
 namespace Containers {
 
-	template<typename TIterator, bool = std::is_base_of<TFC::ObjectClass, typename TIterator::value_type>::value>
-	class DereferenceWrapper;
-
-	template<typename TIterator>
-	class DereferenceWrapper<TIterator, true>
-	{
-	public:
-		void Reset(TIterator& ref) { ptr = &ref; }
-		ObjectClass& Dereference() { return *(*ptr); }
-	private:
-		TIterator* ptr { nullptr };
-	};
-
-	template<typename TIterator>
-	class DereferenceWrapper<TIterator, false>
+	template<typename TIterator, typename = void>
+	class DereferenceWrapper
 	{
 	public:
 		typedef typename std::remove_reference<decltype(*std::declval<TIterator>())>::type ValueType;
@@ -46,6 +34,30 @@ namespace Containers {
 	private:
 		TIterator* ptr { nullptr };
 		std::unique_ptr<TFC::ReferenceWrapper<ValueType>> refWrapper;
+	};
+
+	template<typename TIterator>
+	class DereferenceWrapper<
+		TIterator,
+		typename std::enable_if<
+			std::is_pointer<typename TIterator::value_type>::value &&
+			std::is_base_of<TFC::ObjectClass, std::remove_pointer_t<typename TIterator::value_type>>::value>::type>
+	{
+	public:
+		void Reset(TIterator& ref) { ptr = &ref; }
+		ObjectClass& Dereference() { return ***ptr; } // <-- The hell of stars: 1. deref the iterator ptr, 2. call * operator of iterator object to get the ptr, 3. deref the ptr to ObjectClass
+	private:
+		TIterator* ptr { nullptr };
+	};
+
+	template<typename TIterator>
+	class DereferenceWrapper<TIterator, typename std::enable_if<std::is_base_of<TFC::ObjectClass, typename TIterator::value_type>::value>::type>
+	{
+	public:
+		void Reset(TIterator& ref) { ptr = &ref; }
+		ObjectClass& Dereference() { return *(*ptr); }
+	private:
+		TIterator* ptr { nullptr };
 	};
 
 	template<typename TContainer>
@@ -71,24 +83,26 @@ namespace Containers {
 		}
 	};
 
+	struct ItemEventArgs
+	{
+		ContainerBase::Iterator item;
+	};
 
 	class ObservableContainerBase :
 		public ContainerBase,
 		public EventEmitterClass<ObservableContainerBase>
 	{
 	public:
-		struct ItemEventArgs
-		{
-			ContainerBase::Iterator item;
-		};
 
-		Event<ItemEventArgs> eventItemInserted;
-		Event<ItemEventArgs> eventItemRemoved;
+
+		Event<ItemEventArgs&> eventItemInserted;
+		Event<ItemEventArgs&> eventItemRemoved;
 
 	protected:
 		void RaiseEventItemInserted(std::unique_ptr<ContainerBase::Iterator::IteratorImpl> item)
 		{
-			eventItemInserted(this, { { std::move(item) } });
+			ItemEventArgs args { std::move(item) };
+			eventItemInserted(this, args);
 		}
 	};
 
@@ -102,9 +116,9 @@ namespace Containers {
 		class IteratorImpl : public ContainerBase::Iterator::IteratorImpl
 		{
 		public:
-			virtual ObjectClass& Dereference() { return dereferenceWrapper.Dereference(); }
+			virtual ObjectClass& Dereference() override { return dereferenceWrapper.Dereference(); }
 
-			virtual bool Equal(ContainerBase::Iterator::IteratorImpl const& other) const
+			virtual bool Equal(ContainerBase::Iterator::IteratorImpl const& other) const override
 			{
 				auto otherPtr = dynamic_cast<IteratorImpl const*>(&other);
 				if(otherPtr)
@@ -112,12 +126,17 @@ namespace Containers {
 				return false;
 			}
 
-			virtual void Increment() { iterator++; dereferenceWrapper.Reset(iterator); }
-			virtual void Decrement() { iterator--; dereferenceWrapper.Reset(iterator); }
+			virtual void Increment() override { iterator++; dereferenceWrapper.Reset(iterator); }
+			virtual void Decrement() override { iterator--; dereferenceWrapper.Reset(iterator); }
 
-			virtual std::unique_ptr<ContainerBase::Iterator::IteratorImpl> Clone() const
+			virtual std::unique_ptr<ContainerBase::Iterator::IteratorImpl> Clone() const override
 			{
 				return std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl(this->iterator) };
+			}
+
+			virtual void const* GetStorageAddress() const override
+			{
+				return &*iterator;
 			}
 
 		private:
@@ -205,6 +224,10 @@ namespace Containers {
 		{
 			return this->container.empty();
 		}
+
+		auto GetUnderlyingEndIterator()	{ return this->container.end();	}
+
+		auto GetUnderlyingBeginIterator() { return this->container.begin(); }
 
 	private:
 		TContainer container;

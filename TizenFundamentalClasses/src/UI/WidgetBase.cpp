@@ -34,25 +34,25 @@ WidgetBase::WidgetBase(Evas_Object* widget) :
 }
 
 LIBAPI
-void WidgetBase::SetEnabled(bool const& enabled)
+void WidgetBase::SetEnabled(bool enabled)
 {
 	elm_object_disabled_set(this->widgetRootInternal, !enabled);
 }
 
 LIBAPI
-bool WidgetBase::GetEnabled() const
+bool WidgetBase::IsEnabled() const
 {
 	return !elm_object_disabled_get(this->widgetRootInternal);
 }
 
 LIBAPI
-bool WidgetBase::GetVisible() const
+bool WidgetBase::IsVisible() const
 {
 	return evas_object_visible_get(this->widgetRootInternal);
 }
 
 LIBAPI
-void WidgetBase::SetVisible(bool const& visible)
+void WidgetBase::SetVisible(bool visible)
 {
 	if(visible)
 		evas_object_show(this->widgetRootInternal);

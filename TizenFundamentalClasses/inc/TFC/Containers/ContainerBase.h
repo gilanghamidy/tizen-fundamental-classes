@@ -30,6 +30,7 @@ namespace Containers {
 				virtual void Increment() = 0;
 				virtual void Decrement() = 0;
 				virtual std::unique_ptr<IteratorImpl> Clone() const = 0;
+				virtual void const* GetStorageAddress() const = 0;
 
 				friend class Iterator;
 			};
@@ -49,7 +50,7 @@ namespace Containers {
 
 
 			Iterator(std::unique_ptr<IteratorImpl>&& iteratorImpl) : impl(std::move(iteratorImpl)) { }
-
+			void const* GetStorageAddress() const { return impl->GetStorageAddress(); }
 		private:
 			std::unique_ptr<IteratorImpl> impl;
 

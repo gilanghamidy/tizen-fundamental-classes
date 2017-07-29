@@ -37,6 +37,13 @@
 #define LIBAPI
 #endif
 
+
+#if defined(__CDT_PARSER__) || __has_declspec_attribute(property)
+#	define TFC_HAS_PROPERTY
+#endif
+
+
+
 #include <memory>
 #include <exception>
 #include <string>
@@ -264,6 +271,7 @@ long long GetCurrentTimeMillis();
 class ReferenceWrapperBase : public ObjectClass
 {
 public:
+	virtual void const* GetAddress() const = 0;
 	virtual ~ReferenceWrapperBase() { }
 	virtual std::unique_ptr<ReferenceWrapperBase> Clone() = 0;
 };
@@ -278,6 +286,16 @@ public:
 	virtual std::unique_ptr<ReferenceWrapperBase> Clone() override
 	{
 		return std::unique_ptr<ReferenceWrapperBase> { new ReferenceWrapper<T> { ref } };
+	}
+
+	T* operator&()
+	{
+		return &ref;
+	}
+
+	virtual void const* GetAddress() const override
+	{
+		return &ref;
 	}
 private:
 	T& ref;
@@ -295,6 +313,16 @@ public:
 	virtual std::unique_ptr<ReferenceWrapperBase> Clone() override
 	{
 		return std::unique_ptr<ReferenceWrapperBase> { new ObjectReferenceWrapper { ref } };
+	}
+
+	virtual void const* GetAddress() const override
+	{
+		return &ref;
+	}
+
+	ObjectClass* operator&()
+	{
+		return &ref;
 	}
 
 private:
@@ -366,10 +394,51 @@ T UnpackFromObjectClass(ObjectClass* obj)
 	return ptrRaw->value;
 }
 
+template<typename T, typename = void>
+struct WrapperCastHelper;
 
+template<typename T>
+struct WrapperCastHelper<T&, typename std::enable_if<std::is_base_of<ObjectClass, T>::value>::type>
+{
+	static T& Cast(ObjectClass& ref)
+	{
+		auto ptr = dynamic_cast<T*>(&ref);
 
-}
-}
+		if(ptr)
+			return *ptr;
+		else
+		{
+			std::string msg { "Expected type: " };
+			msg.append(typeid(T).name());
+			msg.append(", Provided: ");
+			msg.append(typeid(ref).name());
+			throw TFC::TFCException(std::move(msg));
+		}
+	}
+};
+
+template<typename T>
+struct WrapperCastHelper<T&, typename std::enable_if<not std::is_base_of<ObjectClass, T>::value>::type>
+{
+	static T& Cast(ObjectClass& ref)
+	{
+		auto tmpPtr = dynamic_cast<TFC::ReferenceWrapper<typename std::remove_reference<T>::type>*>(&ref);
+		if(tmpPtr)
+		{
+			return tmpPtr->Get();
+		}
+		else
+		{
+			std::string msg { "Expected type: " };
+			msg.append(typeid(T).name());
+			msg.append(", Provided: ");
+			msg.append(typeid(ref).name());
+			throw TFC::TFCException(std::move(msg));
+		}
+	}
+};
+
+}}
 
 #define TFC_ExceptionDeclare(NAME, PARENT)\
 class NAME : public PARENT\
@@ -402,8 +471,7 @@ namespace Core {
 
 TFC_ExceptionDeclare	(InvocationException, RuntimeException);
 
-}
-}
+}}
 
 #include "TFC/Core/Event.inc.h"
 #include "TFC/Core/Property.inc.h"
@@ -417,18 +485,7 @@ TFC::ManagedClass::SafePointer TFC::ManagedClass::GetSafePointerFrom(T* what)
 template<typename T>
 T wrapper_cast(TFC::ObjectClass& obj)
 {
-	auto tmpPtr = dynamic_cast<TFC::ReferenceWrapper<typename std::remove_reference<T>::type>*>(&obj);
-	if(tmpPtr)
-	{
-		return tmpPtr->Get();
-	}
-	else
-	{
-		std::string msg { "Expected type: " };
-		msg.append(typeid(obj).name());
-		throw TFC::TFCException(msg);
-	}
+	return TFC::Core::WrapperCastHelper<T>::Cast(obj);
 }
-
 
 #endif /* CORE_NEW_H_ */

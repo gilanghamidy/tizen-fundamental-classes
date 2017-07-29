@@ -30,7 +30,7 @@
 								<option defaultValue="gnu.cpp.compiler.debugging.level.max" id="sbi.gnu.cpp.compiler.option.debugging.level.core.580824578" name="Debug level" superClass="sbi.gnu.cpp.compiler.option.debugging.level.core" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option defaultValue="true" id="sbi.gnu.cpp.compiler.option.misc.pic.core.1913051633" name="-fPIC option" superClass="sbi.gnu.cpp.compiler.option.misc.pic.core" useByScannerDiscovery="false" valueType="boolean"/>
 								<option id="sbi.gnu.cpp.compiler.option.1002865777" name="Tizen-Target" superClass="sbi.gnu.cpp.compiler.option" useByScannerDiscovery="false" valueType="userObjs">
-									<listOptionValue builtIn="false" value="mobile-2.4-device.core_llvm37.armel.core.sharedLib"/>
+									<listOptionValue builtIn="false" value="mobile-2.4-emulator.core_llvm37.i386.core.sharedLib"/>
 								</option>
 								<option id="sbi.gnu.cpp.compiler.option.frameworks_inc.core.1080772360" name="Tizen-Frameworks-Include-Path" superClass="sbi.gnu.cpp.compiler.option.frameworks_inc.core" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${SBI_SYSROOT}/usr/include/libxml2&quot;"/>
@@ -116,7 +116,6 @@
 									<listOptionValue builtIn="false" value="${TC_COMPILER_MISC}"/>
 									<listOptionValue builtIn="false" value="${RS_COMPILER_MISC}"/>
 									<listOptionValue builtIn="false" value="--sysroot=&quot;${SBI_SYSROOT}&quot;"/>
-									<listOptionValue builtIn="false" value="-mthumb"/>
 									<listOptionValue builtIn="false" value="-fvisibility=hidden"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.include.paths.164284422" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
@@ -129,7 +128,7 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1838051576" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="LIBBUILD"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.other.other.1338890558" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -frtti" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.1338890558" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -frtti -fms-extensions" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.184163901" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool command="clang" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GCCErrorParser" id="org.tizen.nativecore.tool.sbi.gnu.c.compiler.1959552688" name="C Compiler" superClass="org.tizen.nativecore.tool.sbi.gnu.c.compiler">
@@ -137,7 +136,7 @@
 								<option defaultValue="gnu.c.debugging.level.max" id="sbi.gnu.c.compiler.option.debugging.level.core.744440299" name="Debug level" superClass="sbi.gnu.c.compiler.option.debugging.level.core" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option defaultValue="true" id="sbi.gnu.c.compiler.option.misc.pic.core.1161805189" name="-fPIC option" superClass="sbi.gnu.c.compiler.option.misc.pic.core" useByScannerDiscovery="false" valueType="boolean"/>
 								<option id="sbi.gnu.c.compiler.option.1470655574" name="Tizen-Target" superClass="sbi.gnu.c.compiler.option" useByScannerDiscovery="false" valueType="userObjs">
-									<listOptionValue builtIn="false" value="mobile-2.4-device.core_llvm37.armel.core.sharedLib"/>
+									<listOptionValue builtIn="false" value="mobile-2.4-emulator.core_llvm37.i386.core.sharedLib"/>
 								</option>
 								<option id="sbi.gnu.c.compiler.option.frameworks_inc.core.263855514" name="Tizen-Frameworks-Include-Path" superClass="sbi.gnu.c.compiler.option.frameworks_inc.core" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${SBI_SYSROOT}/usr/include/libxml2&quot;"/>
@@ -223,7 +222,6 @@
 									<listOptionValue builtIn="false" value="${TC_COMPILER_MISC}"/>
 									<listOptionValue builtIn="false" value="${RS_COMPILER_MISC}"/>
 									<listOptionValue builtIn="false" value="--sysroot=&quot;${SBI_SYSROOT}&quot;"/>
-									<listOptionValue builtIn="false" value="-mthumb"/>
 									<listOptionValue builtIn="false" value="-fvisibility=hidden"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.1917350246" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
@@ -258,7 +256,7 @@
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool command="arm-linux-gnueabi-as" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="org.tizen.nativeapp.tool.sbi.gnu.assembler.base.808008340" name="Assembler" superClass="org.tizen.nativeapp.tool.sbi.gnu.assembler.base">
+							<tool command="i386-linux-gnueabi-as" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="org.tizen.nativeapp.tool.sbi.gnu.assembler.base.808008340" name="Assembler" superClass="org.tizen.nativeapp.tool.sbi.gnu.assembler.base">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.434385047" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 							<tool command="clangFnMapGen" commandLinePattern="${COMMAND} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} -ast $(@:%.fn=%.ast) ${INPUTS} -- ${FLAGS}" errorParsers="" id="org.tizen.nativecore.tool.fnmapgen.1796334811" name="C FN-Map Generator" superClass="org.tizen.nativecore.tool.fnmapgen"/>
@@ -407,7 +405,7 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1166124449" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="LIBBUILD"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.other.other.56818109" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -frtti" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.56818109" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -frtti -fms-extensions" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1812691294" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool command="clang" id="org.tizen.nativecore.tool.sbi.gnu.c.compiler.1362758560" name="C Compiler" superClass="org.tizen.nativecore.tool.sbi.gnu.c.compiler">

@@ -35,8 +35,9 @@
 #include "TFC/Core/Introspect.h"
 #include <utility>
 
+
 template<typename TClass>
-class TFC::PropertyClass
+class [[deprecated("Use MSVC extensions for property declaration")]] TFC::PropertyClass
 {
 protected:
 	template<typename TValue>

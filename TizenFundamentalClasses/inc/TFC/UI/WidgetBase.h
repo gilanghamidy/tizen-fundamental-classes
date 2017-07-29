@@ -26,17 +26,37 @@ namespace UI {
 	class WidgetBase :
 			EventEmitterClass<WidgetBase>,
 			public EFL::EFLProxyClass,
-			public PropertyClass<WidgetBase>,
 			public ManagedClass
 	{
 	public:
 		operator Evas_Object*();
 		operator Evas_Object const*() const;
 
-		TFC_Property(WidgetBase, bool, Enabled);
-		TFC_Property(WidgetBase, bool, Visible);
-		TFC_Property(WidgetBase, Coordinate, Weight);
-		TFC_Property(WidgetBase, Coordinate, Align);
+		bool IsEnabled() const;
+		void SetEnabled(bool b);
+
+		bool IsVisible() const;
+		void SetVisible(bool b);
+
+		Coordinate GetWeight() const;
+		void SetWeight(Coordinate const& c);
+
+		Coordinate GetAlign() const;
+		void SetAlign(Coordinate const& c);
+
+#ifdef TFC_HAS_PROPERTY
+		__declspec(property(get = IsEnabled, put = SetEnabled))
+		bool Enabled;
+
+		__declspec(property(get = IsVisible, put = SetVisible))
+		bool Visible;
+
+		__declspec(property(get = GetWeight, put = SetWeight))
+		Coordinate Weight;
+
+		__declspec(property(get = GetAlign, put = SetAlign))
+		Coordinate Align;
+#endif
 
 	protected:
 		WidgetBase(Evas_Object* widget);

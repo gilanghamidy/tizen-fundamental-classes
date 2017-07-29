@@ -12,49 +12,114 @@
 #include <deque>
 #include <map>
 #include <list>
-#include <TFC/Containers/ContainerBase.h>
 #include <TFC/UI/WidgetBase.h>
 
 namespace TFC {
+
+namespace Containers {
+	class ContainerBase;
+	class ObservableContainerBase;
+	struct ItemEventArgs;
+}
+
 namespace UI {
 
 	class ContainerWidgetBase :
-		public WidgetBase,
-		EventEmitterClass<ContainerWidgetBase>,
-		PropertyClass<ContainerWidgetBase>
+		public WidgetBase
 	{
 	public:
-		ContainerWidgetBase();
+		std::shared_ptr<Containers::ContainerBase> GetItemsSource() const;
+		void SetItemsSource(std::shared_ptr<Containers::ContainerBase> const& value);
 
-		TFC_Property(ContainerWidgetBase, bool, SelectionMode);
-		TFC_Property(ContainerWidgetBase, std::shared_ptr<Containers::ContainerBase>, ItemsSource);
+#ifdef TFC_HAS_PROPERTY
+		__declspec(property(get = GetItemsSource, put = SetItemsSource))
+		std::shared_ptr<Containers::ContainerBase> ItemsSource;
+#endif
 
 	protected:
 		struct ContainerWidgetItem
 		{
-			std::unique_ptr<TFC::ReferenceWrapperBase> data;
-			Elm_Object_Item* itemHandle;
-			bool selected;
+			ObjectClass* data;
+			Elm_Object_Item* itemHandle { nullptr };
+
+			ContainerWidgetItem(ObjectClass* data) : data(data) { }
 		};
 
-		virtual Elm_Object_Item* AddItem(TFC::ReferenceWrapperBase& obj, Elm_Object_Item* after) = 0;
-		virtual void RemoveItem(Elm_Object_Item* item) = 0;
-
-		void SetSelected(Elm_Object_Item* theItem, bool selected);
+		ContainerWidgetBase(Evas_Object* item) : WidgetBase(item) { };
+		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) = 0;
+		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) = 0;
+		virtual void OnDataSourceChanged();
+		ContainerWidgetItem* GetWidgetItemByData(void* data) { return indexBySource.at(data); }
+		ObjectClass& GetDataByItemHandle(Elm_Object_Item* item) { return *indexByObjectItem.at(item)->data; }
 		virtual ~ContainerWidgetBase();
-
 	private:
 		std::shared_ptr<Containers::ContainerBase> itemsSource;
-		std::list<ContainerWidgetItem> internalItems;
-		std::map<void*, ContainerWidgetItem*> indexBySource;
+		std::deque<ContainerWidgetItem> internalItems;
+		std::map<void const*, ContainerWidgetItem*> indexBySource;
 		std::map<Elm_Object_Item*, ContainerWidgetItem*> indexByObjectItem;
-		std::deque<ContainerWidgetItem*> selectedItems;
-		TFC::Containers::ObservableContainerBase* observableCollection { nullptr };
 
-		void OnCollectionItemInserted(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ObservableContainerBase::ItemEventArgs args);
-		void OnCollectionItemRemoved(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ObservableContainerBase::ItemEventArgs args);
+		TFC::Containers::ObservableContainerBase* observableCollection { nullptr };
+		bool referenceWrapped { false };
+		bool referenceWrappingValidated { false };
+
+		void OnCollectionItemInserted(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ItemEventArgs& args);
+		void OnCollectionItemRemoved(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ItemEventArgs& args);
+
+		void ProcessInsertItem(ObjectClass& obj, void const* itemAddress, void const* itemAddressAfter = nullptr);
+		Elm_Object_Item* GetObjectItemByStorageAddress(void const* itemBefore);
 	};
 
+	enum class SelectionMode {
+		None = 0,
+		Single,
+		Multiple
+	};
+
+	class SelectorWidgetBase :
+		public virtual ContainerWidgetBase,
+		EventEmitterClass<SelectorWidgetBase>
+	{
+	public:
+		SelectionMode GetSelectionMode();
+		void SetSelectionMode(SelectionMode mode);
+
+		template<typename T>
+		void AddToSelection(T& item)
+		{
+
+		}
+
+		template<typename T>
+		void RemoveFromSelection(T& item)
+		{
+
+		}
+
+		std::vector<ObjectClass*> GetSelectedItems();
+
+		ObjectClass& GetSelectedItem();
+
+#ifdef TFC_HAS_PROPERTY
+		__declspec(property(get = GetSelectionMode, put = SetSelectionMode))
+		SelectionMode SelectionMode;
+
+		__declspec(property(get = GetSelectedItems))
+		std::vector<ObjectClass*> SelectedItems;
+
+		__declspec(property(get = GetSelectedItem))
+		ObjectClass& SelectedItem;
+#endif
+
+	protected:
+		//SelectorWidgetBase(Evas_Object* item) : ContainerWidgetBase(item) { }
+		void SetSelected(Elm_Object_Item* theItem, bool selected);
+
+		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) override;
+	private:
+		std::deque<ContainerWidgetItem*> selectedItems;
+		ContainerWidgetItem* singleSelectedItem { nullptr };
+		enum SelectionMode selectionMode { SelectionMode::Single };
+	};
 }}
 
 
