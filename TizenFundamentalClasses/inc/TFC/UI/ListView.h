@@ -11,6 +11,9 @@
 #include <TFC/Containers/ContainerBase.h>
 #include <TFC/UI/ContainerWidgetBase.h>
 
+#define TFC_LISTITEM_DATACONTEXT "__tfc_datacontext"
+#define TFC_LISTITEM_DATACONTEXTTYPE "__tfc_datacontext_type"
+
 namespace TFC {
 namespace UI {
 
@@ -82,6 +85,26 @@ namespace UI {
 				return false;
 			}
 		}
+
+		T& GetDataContext(Evas_Object* obj)
+		{
+			while(obj != nullptr)
+			{
+				auto dataType = (char const*)evas_object_data_get(obj, TFC_LISTITEM_DATACONTEXTTYPE);
+				if(dataType != nullptr)
+				{
+					if(strcmp(dataType, typeid(T).name()) == 0)
+					{
+						auto data = (T*)evas_object_data_get(obj, TFC_LISTITEM_DATACONTEXT);
+						return *data;
+					}
+				}
+
+				obj = elm_object_parent_widget_get(obj);
+			}
+
+			throw TFC::TFCException("Data context not available");
+		}
 	protected:
 		typedef Evas_Object* (ItemTemplate::* ContentFunc)(T& obj, Evas_Object* parent);
 		typedef std::string (T::* StringGetterFunc)() const;
@@ -142,6 +165,7 @@ namespace UI {
 			else
 				return nullptr;
 		}
+
 		virtual Evas_Object* GetContent(void* obj, Evas_Object* root, char const* part) override
 		{
 			auto ptr = static_cast<T*>(obj);
@@ -151,7 +175,10 @@ namespace UI {
 				return nullptr;
 
 			auto funcPtr = iter->second.contentFuncPtr;
-			return (this->*funcPtr)(*ptr, root);
+			auto theContent = (this->*funcPtr)(*ptr, root);
+			evas_object_data_set(theContent, TFC_LISTITEM_DATACONTEXT, obj);
+			evas_object_data_set(theContent, TFC_LISTITEM_DATACONTEXTTYPE, typeid(T).name());
+			return theContent;
 		}
 
 	private:
@@ -241,7 +268,13 @@ namespace UI {
 		ListView(Evas_Object* parent);
 		virtual ~ListView();
 
+		void ScrollToTop();
+		void ScrollToBottom();
 
+		Event<ObjectClass&> eventItemClicked;
+		Event<ObjectClass&> eventItemLongClicked;
+		Event<void*> eventScrollingUp;
+		Event<void*> eventScrollingDown;
 	};
 
 }}

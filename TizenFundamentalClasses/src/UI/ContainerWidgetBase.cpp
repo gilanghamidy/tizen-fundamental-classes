@@ -19,7 +19,7 @@ std::shared_ptr<Containers::ContainerBase> ContainerWidgetBase::GetItemsSource()
 }
 
 LIBAPI
-void TFC::UI::ContainerWidgetBase::OnDataSourceChanged()
+void TFC::UI::ContainerWidgetBase::CleanDataSource()
 {
 	// Item source is not empty, clean the list first
 	if(this->referenceWrapped)
@@ -31,6 +31,7 @@ void TFC::UI::ContainerWidgetBase::OnDataSourceChanged()
 	this->internalItems.clear();
 	this->indexBySource.clear();
 	this->indexByObjectItem.clear();
+	this->itemsSource.reset();
 }
 
 
@@ -39,43 +40,45 @@ void ContainerWidgetBase::SetItemsSource(std::shared_ptr<Containers::ContainerBa
 {
 	if(this->itemsSource)
 	{
-		OnDataSourceChanged();
+		CleanDataSource();
 	}
 
 	this->referenceWrappingValidated = false;
 	this->referenceWrapped = false;
-	this->itemsSource = ref;
-	this->observableCollection = dynamic_cast<TFC::Containers::ObservableContainerBase*>(ref.get());
 
-	if(this->observableCollection)
+	if(ref)
 	{
-		this->observableCollection->eventItemInserted += EventHandler(ContainerWidgetBase::OnCollectionItemInserted);
-		this->observableCollection->eventItemRemoved += EventHandler(ContainerWidgetBase::OnCollectionItemRemoved);
-	}
+		this->itemsSource = ref;
+		this->observableCollection = dynamic_cast<TFC::Containers::ObservableContainerBase*>(ref.get());
 
-	if(!ref->Empty())
-	{
-		auto iter = ref->begin();
-		auto iterEnd = ref->end();
-
-		while(iter != iterEnd)
+		if(this->observableCollection)
 		{
-			auto& item = *iter;
-			if(!this->referenceWrappingValidated)
-			{
-				auto refWrapper = dynamic_cast<TFC::ReferenceWrapperBase*>(&item);
-				if(refWrapper)
-					this->referenceWrapped = true;
-				else
-					this->referenceWrapped = false;
-
-				this->referenceWrappingValidated = true;
-			}
-			ProcessInsertItem(item, iter.GetStorageAddress());
-			++iter;
+			this->observableCollection->eventItemInserted += EventHandler(ContainerWidgetBase::OnCollectionItemInserted);
+			this->observableCollection->eventItemRemoved += EventHandler(ContainerWidgetBase::OnCollectionItemRemoved);
 		}
 
+		if(!ref->Empty())
+		{
+			auto iter = ref->begin();
+			auto iterEnd = ref->end();
 
+			while(iter != iterEnd)
+			{
+				auto& item = *iter;
+				if(!this->referenceWrappingValidated)
+				{
+					auto refWrapper = dynamic_cast<TFC::ReferenceWrapperBase*>(&item);
+					if(refWrapper)
+						this->referenceWrapped = true;
+					else
+						this->referenceWrapped = false;
+
+					this->referenceWrappingValidated = true;
+				}
+				ProcessInsertItem(item, iter.GetStorageAddress());
+				++iter;
+			}
+		}
 	}
 }
 
@@ -86,6 +89,12 @@ TFC::UI::ContainerWidgetBase::~ContainerWidgetBase()
 	{
 		this->observableCollection->eventItemInserted -= EventHandler(ContainerWidgetBase::OnCollectionItemInserted);
 		this->observableCollection->eventItemRemoved -= EventHandler(ContainerWidgetBase::OnCollectionItemRemoved);
+	}
+
+	if(this->referenceWrapped)
+	{
+		for(auto& item : this->internalItems)
+			delete item.data;
 	}
 }
 

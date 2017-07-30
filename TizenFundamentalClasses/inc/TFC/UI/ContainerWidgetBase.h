@@ -48,7 +48,7 @@ namespace UI {
 		ContainerWidgetBase(Evas_Object* item) : WidgetBase(item) { };
 		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) = 0;
 		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) = 0;
-		virtual void OnDataSourceChanged();
+
 		ContainerWidgetItem* GetWidgetItemByData(void* data) { return indexBySource.at(data); }
 		ObjectClass& GetDataByItemHandle(Elm_Object_Item* item) { return *indexByObjectItem.at(item)->data; }
 		virtual ~ContainerWidgetBase();
@@ -57,6 +57,8 @@ namespace UI {
 		std::deque<ContainerWidgetItem> internalItems;
 		std::map<void const*, ContainerWidgetItem*> indexBySource;
 		std::map<Elm_Object_Item*, ContainerWidgetItem*> indexByObjectItem;
+
+		void CleanDataSource();
 
 		TFC::Containers::ObservableContainerBase* observableCollection { nullptr };
 		bool referenceWrapped { false };

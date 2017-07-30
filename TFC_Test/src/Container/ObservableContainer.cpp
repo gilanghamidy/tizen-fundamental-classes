@@ -78,6 +78,37 @@ TEST_F(ObservableContainerTest, BasicInstantiationSet)
 }
 
 namespace {
+
+	class TestObject
+	{
+	public:
+		int GetIntValue()
+		{
+			std::cout << "Accessor called\n";
+			return mIntValue;
+		}
+
+		void SetIntValue(int val)
+		{
+			std::cout << "Mutator called\n";
+			mIntValue = val;
+		}
+
+		void SetIntValue(int const* val)
+		{
+			std::cout << "Mutator overload called\n";
+			mIntValue = *val;
+		}
+
+#if __has_declspec_attribute(property)
+		__declspec(property(get = GetIntValue, put = SetIntValue))
+		int IntValue;
+#endif
+
+	private:
+		int mIntValue;
+	};
+
 	class ObserverClassList
 	{
 	public:
@@ -89,7 +120,7 @@ namespace {
 		}
 
 	private:
-		void OnItemAdd(ObservableContainerBase* source, ObservableContainerBase::ItemEventArgs args)
+		void OnItemAdd(ObservableContainerBase* source, ItemEventArgs& args)
 		{
 			decltype(auto) res = wrapper_cast<std::string&>(*args.item);
 			std::cout << res << '\n';
@@ -107,7 +138,7 @@ namespace {
 		}
 
 	private:
-		void OnItemAdd(ObservableContainerBase* source, ObservableContainerBase::ItemEventArgs args)
+		void OnItemAdd(ObservableContainerBase* source, ItemEventArgs& args)
 		{
 			decltype(auto) res = wrapper_cast<int const&>(*args.item);
 
@@ -138,6 +169,45 @@ namespace {
 			std::cout << '\n';
 		}
 	};
+
+	class TestObjectClass : public TFC::ObjectClass
+	{
+	public:
+		int var1;
+		std::string var2;
+
+		TestObjectClass(int val, char const* val2) : var1(val), var2(std::move(val2)) {}
+	};
+}
+
+TEST_F(ObservableContainerTest, BasicInstantiationObjectClass)
+{
+	ObservableContainer<std::list<TestObjectClass>> standardContainer;
+
+	standardContainer.Emplace(standardContainer.GetUnderlyingEndIterator(), 10, "Strangest");
+	standardContainer.Emplace(standardContainer.GetUnderlyingEndIterator(), 20, "Feeling");
+	standardContainer.Emplace(standardContainer.GetUnderlyingEndIterator(), 30, "Derilium");
+
+	ObservableContainer<std::list<TestObjectClass*>> pointerContainer;
+
+	pointerContainer.Add(new TestObjectClass(40, "Strangest"));
+	pointerContainer.Add(new TestObjectClass(50, "Feeling"));
+	pointerContainer.Add(new TestObjectClass(60, "Derilium"));
+
+
+
+	int ctr = 1;
+	for(auto& obj : standardContainer)
+	{
+		auto casted = static_cast<TestObjectClass*>(&obj);
+		ASSERT_TRUE(ctr++ * 10 == casted->var1) << "Object in standard container is invalid";
+	}
+
+	for(auto& obj : pointerContainer)
+	{
+		auto casted = static_cast<TestObjectClass*>(&obj);
+		ASSERT_TRUE(ctr++ * 10 == casted->var1) << "Object in pointer container is invalid";
+	}
 }
 
 TEST_F(ObservableContainerTest, List_OnItemAdd)
@@ -146,6 +216,16 @@ TEST_F(ObservableContainerTest, List_OnItemAdd)
 	oc.list.AddFirst("Satu");
 	oc.list.AddFirst("Dua");
 	oc.list.AddFirst("Tiga");
+
+	int a = 123;
+	TestObject val;
+	std::cout << "sizeof(TestObject) = " << sizeof(TestObject) << '\n';
+	val.IntValue = 100;
+	std::cout << "IntValue now = " << val.IntValue << '\n';
+	val.IntValue++;
+	std::cout << "IntValue now = " << val.IntValue << '\n';
+	val.IntValue = &a;
+	std::cout << "IntValue now = " << val.IntValue << '\n';
 }
 
 TEST_F(ObservableContainerTest, Set_OnItemAdd)

@@ -109,7 +109,7 @@ void ListViewBase::RemoveItem(Elm_Object_Item* item, const void* baseAddress) {
 }
 
 LIBAPI
-Elm_Object_Item* ListView::AddListItem(void* data,Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore)
+Elm_Object_Item* ListView::AddListItem(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore)
 {
 	Elm_Object_Item* ret = nullptr;
 	if(itemBefore == nullptr)
