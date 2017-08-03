@@ -13,9 +13,11 @@
 namespace TFC {
 namespace UI {
 
-	class Window :
-			public WidgetBase
+	class LIBAPI Window :
+			public WidgetBase,
+			EventEmitterClass<Window>
 	{
+		using EventEmitterClass<Window>::Event;
 	public:
 		Window(char const* windowName);
 
@@ -26,7 +28,29 @@ namespace UI {
 		void SetExitOnClose(bool val);
 		bool GetExitOnclose();
 
+		Event<void*> eventClosing;
 
+	protected:
+		Evas_Object* const& conformant;
+
+		virtual void OnBackButtonClicked();
+		virtual void OnMoreButtonClicked();
+
+	private:
+		Evas_Object* conformantPtr;
+	};
+
+	class LIBAPI TransparentWindow :
+			public Window
+	{
+	public:
+		TransparentWindow(char const* windowName);
+
+	protected:
+		Evas_Object* const& contentWrapper;
+
+	private:
+		Evas_Object* contentWrapperPtr;
 	};
 
 }} // End Namespace TFC::UI

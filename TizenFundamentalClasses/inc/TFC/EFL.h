@@ -30,6 +30,7 @@
 
 #include "TFC/Core.h"
 #include <Elementary.h>
+#include <efl_extension.h>
 #include <memory>
 
 namespace TFC {
@@ -166,6 +167,7 @@ protected:
 	using EvasObjectEvent 			= EvasObjectEventObject;
 	using EdjeSignalEvent 			= EdjeSignalEventObject;
 	using ObjectItemEdjeSignalEvent = ObjectItemEdjeSignalEventObject;
+	using EvasEventSourceInfo 		= EvasEventSourceInfo;
 
 	template<typename T>
 	void InvokeLater(void (T::*func)(void));
