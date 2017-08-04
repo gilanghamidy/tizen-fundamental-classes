@@ -47,10 +47,19 @@ namespace UI {
 		TransparentWindow(char const* windowName);
 
 	protected:
-		Evas_Object* const& contentWrapper;
+		void AttachContent(Evas_Object* (TransparentWindow::* contentFunc)(Evas_Object* parent));
+
+		template<typename T>
+		void AttachContent(Evas_Object* (T::* contentFunc)(Evas_Object* parent))
+		{
+			AttachContent(static_cast<Evas_Object* (TransparentWindow::*)(Evas_Object*)>(contentFunc));
+		}
 
 	private:
 		Evas_Object* contentWrapperPtr;
+		EdjeSignalEvent eventBackgroundClicked;
+
+		void OnBackgroundClicked(Evas_Object* src, EFL::EdjeSignalInfo info);
 	};
 
 }} // End Namespace TFC::UI

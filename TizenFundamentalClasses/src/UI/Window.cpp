@@ -62,6 +62,8 @@ void Window::Hide()
 LIBAPI
 void Window::Close()
 {
+	eventClosing(this, nullptr);
+
 	ecore_job_add([](void* data) {
 		evas_object_del(static_cast<Evas_Object*>(data));
 	}, this->widgetRoot);
@@ -93,8 +95,7 @@ void TFC::UI::Window::OnMoreButtonClicked()
 
 LIBAPI
 TFC::UI::TransparentWindow::TransparentWindow(const char* windowName) :
-		Window(windowName),
-		contentWrapper(contentWrapperPtr)
+		Window(windowName)
 {
 	elm_win_alpha_set(this->widgetRoot, EINA_TRUE);
 	elm_win_indicator_mode_set(this->widgetRoot, ELM_WIN_INDICATOR_HIDE);
@@ -107,4 +108,19 @@ TFC::UI::TransparentWindow::TransparentWindow(const char* windowName) :
 	evas_object_show(this->contentWrapperPtr);
 
 	elm_object_content_set(this->conformant, this->contentWrapperPtr);
+
+	this->eventBackgroundClicked.Bind(this->contentWrapperPtr, "elm,action,click", "");
+	this->eventBackgroundClicked += EventHandler(TransparentWindow::OnBackgroundClicked);
+}
+
+LIBAPI
+void TFC::UI::TransparentWindow::AttachContent(
+		Evas_Object* (TransparentWindow::*contentFunc)(Evas_Object* parent))
+{
+	edje_object_part_swallow(this->contentWrapperPtr, "content", (this->*contentFunc)(this->contentWrapperPtr));
+}
+
+void TFC::UI::TransparentWindow::OnBackgroundClicked(Evas_Object* src, EFL::EdjeSignalInfo info)
+{
+	this->Close();
 }

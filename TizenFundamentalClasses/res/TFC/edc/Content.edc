@@ -59,7 +59,7 @@ collections {
             description { state: "default" 0.0;
                rel1.relative: 0.0 0.0;
                rel2.relative: 1.0 1.0;
-               color: 255 0 0 255;
+               color: 0 0 0 0;
             }
          }
          part { name: "content";
@@ -69,6 +69,11 @@ collections {
                rel2.to: "bg";
             }
          }
+      }
+      program { name: "clicked_signal";
+         signal: "mouse,clicked,1";
+         source: "bg";
+         action: SIGNAL_EMIT "elm,action,click" "";
       }
    }
 }
