@@ -130,9 +130,15 @@ ListView::ListView(Evas_Object* parent) :
 {
 	elm_genlist_highlight_mode_set(widgetRoot, EINA_FALSE);
 	elm_genlist_select_mode_set(widgetRoot, ELM_OBJECT_SELECT_MODE_ALWAYS);
+
+	eventScrollingInternal.Bind(widgetRoot, "scroll");
+	eventScrollingDownInternal.Bind(widgetRoot, "scroll,down");
+	eventScrollingUpInternal.Bind(widgetRoot, "scroll,up");
+	eventItemRealized.Bind(widgetRoot, "realized");
 }
 
 LIBAPI
 ListView::~ListView()
 {
+
 }

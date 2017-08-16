@@ -260,21 +260,45 @@ namespace UI {
 	{
 		using EventEmitterClass<ListView>::Event;
 
+		EvasSmartEvent eventScrollingInternal;
+		EvasSmartEvent eventScrollingDownInternal;
+		EvasSmartEvent eventScrollingUpInternal;
+		EvasSmartEvent eventItemRealized;
+
+		bool overscroll { false };
+
 	protected:
 		virtual Elm_Object_Item* AddListItem(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore) override;
 		virtual void RemoveListItem(Elm_Object_Item* item) override;
 
 	public:
+		class ScrollEventInfo
+		{
+		private:
+			ListView const& ref;
+
+
+		};
+
+
 		ListView(Evas_Object* parent);
 		virtual ~ListView();
 
 		void ScrollToTop();
 		void ScrollToBottom();
 
+		void SetOverscroll(bool val);
+		bool GetOverscroll() { return overscroll };
+
 		Event<ObjectClass&> eventItemClicked;
 		Event<ObjectClass&> eventItemLongClicked;
 		Event<void*> eventScrollingUp;
 		Event<void*> eventScrollingDown;
+
+#ifdef TFC_HAS_PROPERTY
+		__declspec(property(get = GetOverscroll, put = SetOverscroll))
+		bool Overscroll;
+#endif
 	};
 
 }}
