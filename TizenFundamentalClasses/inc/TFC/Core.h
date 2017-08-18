@@ -395,30 +395,7 @@ T UnpackFromObjectClass(ObjectClass* obj)
 }
 
 template<typename T, typename = void>
-struct WrapperCastHelper;
-
-template<typename T>
-struct WrapperCastHelper<T&, typename std::enable_if<std::is_base_of<ObjectClass, T>::value>::type>
-{
-	static T& Cast(ObjectClass& ref)
-	{
-		auto ptr = dynamic_cast<T*>(&ref);
-
-		if(ptr)
-			return *ptr;
-		else
-		{
-			std::string msg { "Expected type: " };
-			msg.append(typeid(T).name());
-			msg.append(", Provided: ");
-			msg.append(typeid(ref).name());
-			throw TFC::TFCException(std::move(msg));
-		}
-	}
-};
-
-template<typename T>
-struct WrapperCastHelper<T&, typename std::enable_if<not std::is_base_of<ObjectClass, T>::value>::type>
+struct WrapperCastHelper
 {
 	static T& Cast(ObjectClass& ref)
 	{
@@ -427,6 +404,18 @@ struct WrapperCastHelper<T&, typename std::enable_if<not std::is_base_of<ObjectC
 		{
 			return tmpPtr->Get();
 		}
+		else
+		{
+			return CastObjectClass(ref);
+		}
+	}
+
+	static T& CastObjectClass(ObjectClass& ref)
+	{
+		auto ptr = dynamic_cast<typename std::remove_reference<T>::type*>(&ref);
+
+		if(ptr)
+			return *ptr;
 		else
 		{
 			std::string msg { "Expected type: " };

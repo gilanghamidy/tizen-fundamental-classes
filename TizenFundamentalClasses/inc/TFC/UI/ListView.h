@@ -70,7 +70,7 @@ namespace UI {
 	public:
 		virtual ItemPayload PackPayload(ObjectClass& item) const override
 		{
-			return { *const_cast<ItemTemplate*>(this), &wrapper_cast<T&>(item) };
+			return { *const_cast<ItemTemplate*>(this), const_cast<typename std::remove_const<T>::type*>(&wrapper_cast<T&>(item)) };
 		}
 
 		virtual bool CanProcess(ObjectClass& obj) const override
@@ -288,7 +288,7 @@ namespace UI {
 		void ScrollToBottom();
 
 		void SetOverscroll(bool val);
-		bool GetOverscroll() { return overscroll };
+		bool GetOverscroll() { return overscroll; };
 
 		Event<ObjectClass&> eventItemClicked;
 		Event<ObjectClass&> eventItemLongClicked;

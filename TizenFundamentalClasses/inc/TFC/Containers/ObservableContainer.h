@@ -12,6 +12,7 @@
 #include <TFC/Core/Metaprogramming.h>
 #include <list>
 #include <set>
+#include <deque>
 
 namespace TFC {
 namespace Containers {
@@ -51,7 +52,8 @@ namespace Containers {
 	};
 
 	template<typename TIterator>
-	class DereferenceWrapper<TIterator, typename std::enable_if<std::is_base_of<TFC::ObjectClass, typename TIterator::value_type>::value>::type>
+	class DereferenceWrapper<TIterator, typename std::enable_if<std::is_base_of<TFC::ObjectClass, typename TIterator::value_type>::value &&
+																not std::is_const<typename std::remove_pointer<typename TIterator::pointer>::type>::value>::type>
 	{
 	public:
 		void Reset(TIterator& ref) { ptr = &ref; }
@@ -111,6 +113,7 @@ namespace Containers {
 	{
 	public:
 		typedef typename TContainer::value_type ValueType;
+		typedef typename TContainer::reference Reference;
 		typedef typename TContainer::iterator UnderlyingIterator;
 
 		class IteratorImpl : public ContainerBase::Iterator::IteratorImpl
@@ -193,23 +196,49 @@ namespace Containers {
 		template<typename... TArgs>
 		void EmplaceAfter(Iterator const& where, TArgs&&... args);
 
-		void Insert(ValueType const& obj)
+		ContainerBase::Iterator Insert(ValueType const& obj)
 		{
 			auto iter = MapSetIteratorExtractorHelper<TContainer>::GetFromInsert(this->container.insert(obj));
 			std::unique_ptr<ContainerBase::Iterator::IteratorImpl> ret { new IteratorImpl(iter) };
 			RaiseEventItemInserted(std::move(ret));
+
+			return { std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl(iter) } };
 		}
 
-		void Insert(ValueType&& obj)
+		ContainerBase::Iterator Insert(ValueType&& obj)
 		{
 			auto iter = MapSetIteratorExtractorHelper<TContainer>::GetFromInsert(this->container.insert(std::move(obj)));
 			std::unique_ptr<ContainerBase::Iterator::IteratorImpl> ret { new IteratorImpl(iter) };
 			RaiseEventItemInserted(std::move(ret));
+
+			return { std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl(iter) } };
 		}
 
-		typedef ValueType& Reference;
-		Reference GetFirst();
-		Reference GetLast();
+		void Erase(ContainerBase::Iterator const& obj)
+		{
+			auto& impl = GetIteratorImpl(obj);
+			auto& casted = dynamic_cast<IteratorImpl&>(impl);
+			this->container.erase(casted.iterator);
+		}
+
+		void Erase(UnderlyingIterator iter)
+		{
+			this->container.erase(iter);
+		}
+
+
+		decltype(auto) GetFirst()
+		{
+			return *this->container.begin();
+		}
+
+		decltype(auto) GetLast()
+		{
+			auto end = this->container.end();
+			--end;
+
+			return *end;
+		}
 
 		std::unique_ptr<Iterator::IteratorImpl> GetIteratorImplBegin() override
 		{
@@ -225,6 +254,16 @@ namespace Containers {
 			return this->container.empty();
 		}
 
+		virtual size_t Count() override
+		{
+			return this->container.size();
+		}
+
+		virtual void Clear() override
+		{
+			this->container.clear();
+		}
+
 		auto GetUnderlyingEndIterator()	{ return this->container.end();	}
 
 		auto GetUnderlyingBeginIterator() { return this->container.begin(); }
@@ -234,7 +273,14 @@ namespace Containers {
 	};
 
 
+	template<typename T>
+	using ObservableSet = ObservableContainer<std::set<T>>;
 
+	template<typename T>
+	using ObservableList = ObservableContainer<std::list<T>>;
+
+	template<typename T>
+	using ObservableDeque = ObservableContainer<std::deque<T>>;
 }}
 
 

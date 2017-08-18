@@ -67,6 +67,12 @@ namespace UI {
 			return theWidget->*tPtr;
 		}
 
+		template<typename TValue>
+		auto operator[](TValue val)
+		{
+			return theWidget->operator[](std::forward<TValue>(val));
+		}
+
 		operator Evas_Object*()
 		{
 			return static_cast<Evas_Object*>(*theWidget);

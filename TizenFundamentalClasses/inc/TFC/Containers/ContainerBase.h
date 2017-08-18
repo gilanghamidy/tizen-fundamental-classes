@@ -19,6 +19,8 @@ namespace Containers {
 		class Iterator
 		{
 		public:
+			typedef std::bidirectional_iterator_tag iterator_category;
+
 			class IteratorImpl
 			{
 			public:
@@ -40,6 +42,7 @@ namespace Containers {
 			Iterator& operator--() { impl->Decrement(); return *this; }
 
 			bool operator!=(Iterator const& other) { return !this->impl->Equal(*other.impl); }
+			bool operator==(Iterator const& other) { return !operator!=(other); }
 
 			Iterator(Iterator const& other) : impl(other.impl->Clone()) { }
 			Iterator(Iterator&& other) : impl(std::move(other.impl)) { }
@@ -51,6 +54,7 @@ namespace Containers {
 
 			Iterator(std::unique_ptr<IteratorImpl>&& iteratorImpl) : impl(std::move(iteratorImpl)) { }
 			void const* GetStorageAddress() const { return impl->GetStorageAddress(); }
+
 		private:
 			std::unique_ptr<IteratorImpl> impl;
 
@@ -62,10 +66,14 @@ namespace Containers {
 		Iterator begin() { return { GetIteratorImplBegin() }; }
 		Iterator end() { return { GetIteratorImplEnd() }; }
 		virtual bool Empty() = 0;
+		virtual size_t Count() = 0;
+		virtual void Clear() = 0;
 
 	protected:
 		virtual std::unique_ptr<Iterator::IteratorImpl> GetIteratorImplBegin() = 0;
 		virtual std::unique_ptr<Iterator::IteratorImpl> GetIteratorImplEnd() = 0;
+
+		Iterator::IteratorImpl& GetIteratorImpl(Iterator const& obj) const { return *obj.impl.get(); };
 
 	private:
 	};
