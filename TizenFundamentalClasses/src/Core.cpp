@@ -262,7 +262,7 @@ TFC::ManagedClass::SafePointer& TFC::ManagedClass::SafePointer::operator=(SafePo
 }
 
 LIBAPI
-void TFC::ManagedClass::SafePointer::ThrowIfUnsafe()
+void TFC::ManagedClass::SafePointer::ThrowIfUnsafe() const
 {
 	if(!TryAccess()) throw ObjectDeletedException();
 }

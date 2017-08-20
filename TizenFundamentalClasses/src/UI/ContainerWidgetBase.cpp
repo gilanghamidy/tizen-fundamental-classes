@@ -244,3 +244,9 @@ void TFC::UI::SelectorWidgetBase::RemoveItem(Elm_Object_Item* item, const void* 
 {
 
 }
+
+LIBAPI
+void TFC::UI::ContainerWidgetBase::OnItemClicked(ObjectClass& item)
+{
+	eventItemClicked(this, item);
+}

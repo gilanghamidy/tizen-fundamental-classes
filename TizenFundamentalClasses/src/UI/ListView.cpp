@@ -83,7 +83,7 @@ std::shared_ptr<ItemTemplateBase> TemplatedContainerWidgetBase::GetItemTemplate(
 LIBAPI
 ItemTemplateBase::ItemPayload& TemplatedContainerWidgetBase::GetTemplatedItem(ObjectClass& obj, const void* baseAddress)
 {
-	auto newItemTemplate = this->itemTemplate->PackPayload(obj);
+	auto newItemTemplate = this->itemTemplate->PackPayload(obj, this);
 	auto newStoredItem = this->itemPayloads.emplace(baseAddress, newItemTemplate);
 	return newStoredItem.first->second;
 }
@@ -113,9 +113,9 @@ Elm_Object_Item* ListView::AddListItem(void* data, Elm_Gen_Item_Class* itemClass
 {
 	Elm_Object_Item* ret = nullptr;
 	if(itemBefore == nullptr)
-		ret = elm_genlist_item_append(widgetRoot, itemClass, data, nullptr, ELM_GENLIST_ITEM_NONE, nullptr, nullptr);
+		ret = elm_genlist_item_append(widgetRoot, itemClass, data, nullptr, ELM_GENLIST_ITEM_NONE, OnItemClickedInternal, data);
 	else
-		ret = elm_genlist_item_insert_before(widgetRoot, itemClass, data, nullptr, itemBefore, ELM_GENLIST_ITEM_NONE, nullptr, nullptr);
+		ret = elm_genlist_item_insert_before(widgetRoot, itemClass, data, nullptr, itemBefore, ELM_GENLIST_ITEM_NONE, OnItemClickedInternal, data);
 	return ret;
 }
 
@@ -141,4 +141,11 @@ LIBAPI
 ListView::~ListView()
 {
 
+}
+
+void TFC::UI::ListView::OnItemClickedInternal(void* data, Evas_Object* obj, void* dataItem)
+{
+	auto templatedItem = static_cast<ItemTemplateBase::ItemPayload*>(data);
+	auto thiz = dynamic_cast<ListView*>(templatedItem->GetWidget());
+	thiz->OnItemClicked(*static_cast<ObjectClass*>(templatedItem->GetItem()));
 }

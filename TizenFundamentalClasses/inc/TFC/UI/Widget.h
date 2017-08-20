@@ -48,6 +48,14 @@ namespace UI {
 			return *this;
 		}
 
+		template<typename TWidgetIn, typename = typename std::is_base_of<TWidget, TWidgetIn>::type>
+		Widget& operator=(Widget<TWidgetIn> const& widget)
+		{
+			theWidget = widget.theWidget;
+			safeHandle = theWidget->GetSafePointer();
+			return *this;
+		}
+
 		TWidget* operator->()
 		{
 			safeHandle.ThrowIfUnsafe();
@@ -84,6 +92,10 @@ namespace UI {
 	private:
 		TWidget* theWidget { nullptr };
 		ManagedClass::SafePointer safeHandle;
+
+		template<typename T1, typename T2>
+		friend class Widget;
+
 	};
 
 	template<typename TWidget, typename TEventType, TEventType TWidget::* eventPtr>

@@ -25,19 +25,28 @@ namespace UI {
 		private:
 			ItemTemplateBase& itemTemplate;
 			void* item;
+			ContainerWidgetBase* widget;
 		public:
-			ItemPayload(ItemTemplateBase& tmplt, void* itm) : itemTemplate(tmplt), item(itm) { }
+			ItemPayload(ItemTemplateBase& tmplt, void* itm, ContainerWidgetBase* widget) :
+				itemTemplate(tmplt),
+				item(itm),
+				widget(widget) { }
 
 			virtual operator Elm_Gen_Item_Class*()
 			{
 				return &itemTemplate.itemClass;
 			}
+
+			void* GetItem() const { return item; }
+
+			ContainerWidgetBase* GetWidget() const { return widget; }
+
 			friend class ItemTemplateBase;
 		};
 
-		virtual ItemPayload PackPayload(ObjectClass& item) const
+		virtual ItemPayload PackPayload(ObjectClass& item, ContainerWidgetBase* widget) const
 		{
-			return { *const_cast<ItemTemplateBase*>(this), &item };
+			return { *const_cast<ItemTemplateBase*>(this), &item, widget };
 		}
 
 		virtual bool CanProcess(ObjectClass& obj) const = 0;
@@ -68,9 +77,9 @@ namespace UI {
 		public ItemTemplateBase
 	{
 	public:
-		virtual ItemPayload PackPayload(ObjectClass& item) const override
+		virtual ItemPayload PackPayload(ObjectClass& item, ContainerWidgetBase* widget) const override
 		{
-			return { *const_cast<ItemTemplate*>(this), const_cast<typename std::remove_const<T>::type*>(&wrapper_cast<T&>(item)) };
+			return { *const_cast<ItemTemplate*>(this), const_cast<typename std::remove_const<T>::type*>(&wrapper_cast<T&>(item)), widget };
 		}
 
 		virtual bool CanProcess(ObjectClass& obj) const override
@@ -106,13 +115,13 @@ namespace UI {
 			throw TFC::TFCException("Data context not available");
 		}
 	protected:
-		typedef Evas_Object* (ItemTemplate::* ContentFunc)(T& obj, Evas_Object* parent);
+		typedef Evas_Object* (ItemTemplate::* ContentFunc)(T const& obj, Evas_Object* parent);
 		typedef std::string (T::* StringGetterFunc)() const;
 		typedef char const* (T::* CStringGetterFunc)() const;
 		typedef std::string const& (T::* StringCRefGetterFunc)() const;
-		typedef std::string (ItemTemplate::* StringFunc)(T& obj);
-		typedef char const* (ItemTemplate::* CStringFunc)(T& obj);
-		typedef std::string const& (ItemTemplate::* StringCRefFunc)(T& obj);
+		typedef std::string (ItemTemplate::* StringFunc)(T const& obj);
+		typedef char const* (ItemTemplate::* CStringFunc)(T const& obj);
+		typedef std::string const& (ItemTemplate::* StringCRefFunc)(T const& obj);
 
 		ItemTemplate(std::string const& className) : ItemTemplateBase(className) { }
 
@@ -267,6 +276,8 @@ namespace UI {
 
 		bool overscroll { false };
 
+		static void OnItemClickedInternal(void* data, Evas_Object* obj, void* dataItem);
+
 	protected:
 		virtual Elm_Object_Item* AddListItem(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore) override;
 		virtual void RemoveListItem(Elm_Object_Item* item) override;
@@ -290,7 +301,6 @@ namespace UI {
 		void SetOverscroll(bool val);
 		bool GetOverscroll() { return overscroll; };
 
-		Event<ObjectClass&> eventItemClicked;
 		Event<ObjectClass&> eventItemLongClicked;
 		Event<void*> eventScrollingUp;
 		Event<void*> eventScrollingDown;

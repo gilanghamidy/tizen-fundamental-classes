@@ -25,11 +25,16 @@ namespace Containers {
 namespace UI {
 
 	class ContainerWidgetBase :
-		public WidgetBase
+		public WidgetBase,
+		EventEmitterClass<ContainerWidgetBase>
 	{
+		using EventEmitterClass<ContainerWidgetBase>::Event;
+
 	public:
 		std::shared_ptr<Containers::ContainerBase> GetItemsSource() const;
 		void SetItemsSource(std::shared_ptr<Containers::ContainerBase> const& value);
+
+		Event<ObjectClass&> eventItemClicked;
 
 #ifdef TFC_HAS_PROPERTY
 		__declspec(property(get = GetItemsSource, put = SetItemsSource))
@@ -52,6 +57,8 @@ namespace UI {
 		ContainerWidgetItem* GetWidgetItemByData(void* data) { return indexBySource.at(data); }
 		ObjectClass& GetDataByItemHandle(Elm_Object_Item* item) { return *indexByObjectItem.at(item)->data; }
 		virtual ~ContainerWidgetBase();
+
+		void OnItemClicked(ObjectClass& item);
 	private:
 		std::shared_ptr<Containers::ContainerBase> itemsSource;
 		std::deque<ContainerWidgetItem> internalItems;

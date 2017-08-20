@@ -140,7 +140,7 @@ public:
 		SafePointer(SafePointer const& that);
 		operator bool() const { return TryAccess(); }
 		bool Empty() const { return !handle; }
-		void ThrowIfUnsafe();
+		void ThrowIfUnsafe() const;
 
 		SafePointer& operator=(SafePointer const& that);
 		SafePointer& operator=(SafePointer&& that);
