@@ -340,4 +340,20 @@ long long TFC::GetCurrentTimeMillis()
 	return millis.count();
 }
 
+LIBAPI
+void TFC::ObservableObjectClass::OnObjectUpdated()
+{
+	eventObjectUpdated(this, nullptr);
+}
 
+LIBAPI
+void TFC::ObservableObjectClass::OnFieldUpdated(const std::string& fieldName)
+{
+	eventFieldUpdated(this, fieldName);
+	eventObjectUpdated(this, nullptr);
+}
+
+LIBAPI
+TFC::ObservableObjectClass::~ObservableObjectClass()
+{
+}

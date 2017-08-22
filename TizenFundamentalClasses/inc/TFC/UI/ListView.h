@@ -273,6 +273,13 @@ namespace UI {
 		EvasSmartEvent eventScrollingDownInternal;
 		EvasSmartEvent eventScrollingUpInternal;
 		EvasSmartEvent eventItemRealized;
+		EvasSmartEvent eventScrollingStartInternal;
+		EvasSmartEvent eventScrollingStopInternal;
+		EvasSmartEvent eventItemRealizedInternal;
+		EvasSmartEvent eventItemUnrealizedInternal;
+
+		int realizedIndexTop { 0 };
+		int realizedIndexBottom { 0 };
 
 		bool overscroll { false };
 
@@ -281,14 +288,15 @@ namespace UI {
 	protected:
 		virtual Elm_Object_Item* AddListItem(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore) override;
 		virtual void RemoveListItem(Elm_Object_Item* item) override;
-
+		virtual void UpdateItem(Elm_Object_Item* item) override;
 	public:
 		class ScrollEventInfo
 		{
 		private:
 			ListView const& ref;
 
-
+			mutable int x;
+			mutable int y;
 		};
 
 
@@ -302,8 +310,8 @@ namespace UI {
 		bool GetOverscroll() { return overscroll; };
 
 		Event<ObjectClass&> eventItemLongClicked;
-		Event<void*> eventScrollingUp;
-		Event<void*> eventScrollingDown;
+		Event<ScrollEventInfo const&> eventScrolledUp;
+		Event<ScrollEventInfo const&> eventScrolledDown;
 
 #ifdef TFC_HAS_PROPERTY
 		__declspec(property(get = GetOverscroll, put = SetOverscroll))

@@ -149,3 +149,9 @@ void TFC::UI::ListView::OnItemClickedInternal(void* data, Evas_Object* obj, void
 	auto thiz = dynamic_cast<ListView*>(templatedItem->GetWidget());
 	thiz->OnItemClicked(*static_cast<ObjectClass*>(templatedItem->GetItem()));
 }
+
+LIBAPI
+void TFC::UI::ListView::UpdateItem(Elm_Object_Item* item)
+{
+	elm_genlist_item_update(item);
+}

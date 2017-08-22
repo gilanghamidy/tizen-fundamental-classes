@@ -106,6 +106,12 @@ namespace Containers {
 			ItemEventArgs args { std::move(item) };
 			eventItemInserted(this, args);
 		}
+
+		void RaiseEventItemRemoved(std::unique_ptr<ContainerBase::Iterator::IteratorImpl> item)
+		{
+			ItemEventArgs args { std::move(item) };
+			eventItemRemoved(this, args);
+		}
 	};
 
 	template<typename TContainer>
@@ -218,11 +224,13 @@ namespace Containers {
 		{
 			auto& impl = GetIteratorImpl(obj);
 			auto& casted = dynamic_cast<IteratorImpl&>(impl);
+			RaiseEventItemRemoved(casted.Clone());
 			this->container.erase(casted.iterator);
 		}
 
 		void Erase(UnderlyingIterator iter)
 		{
+			RaiseEventItemRemoved(std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl { iter } });
 			this->container.erase(iter);
 		}
 

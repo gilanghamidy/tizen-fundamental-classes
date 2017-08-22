@@ -329,6 +329,9 @@ private:
 	ObjectClass& ref;
 };
 
+
+
+
 namespace Core {
 
 /**
@@ -450,11 +453,34 @@ public:\
 }
 
 
+#include "TFC/Core/Event.inc.h"
+#include "TFC/Core/Property.inc.h"
+
 namespace TFC {
 
 TFC_ExceptionDeclare	(RuntimeException, TFCException);
 TFC_ExceptionDeclare	(ArgumentException, TFCException);
 TFC_ExceptionDeclare	(ObjectDeletedException, TFCException);
+
+class LIBAPI ObservableObjectClass :
+		public ObjectClass,
+		EventEmitterClass<ObservableObjectClass>
+{
+public:
+	Event<void*> eventObjectUpdated;
+	Event<std::string const&> eventFieldUpdated;
+
+	LIBAPI ObservableObjectClass() = default;
+	LIBAPI ObservableObjectClass(ObservableObjectClass const& obj)
+	{
+
+	}
+
+protected:
+	void OnObjectUpdated();
+	void OnFieldUpdated(std::string const& fieldName);
+	virtual ~ObservableObjectClass();
+};
 
 namespace Core {
 
@@ -462,8 +488,7 @@ TFC_ExceptionDeclare	(InvocationException, RuntimeException);
 
 }}
 
-#include "TFC/Core/Event.inc.h"
-#include "TFC/Core/Property.inc.h"
+
 
 template<typename T>
 TFC::ManagedClass::SafePointer TFC::ManagedClass::GetSafePointerFrom(T* what)

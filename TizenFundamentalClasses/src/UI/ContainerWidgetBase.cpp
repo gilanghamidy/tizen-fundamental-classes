@@ -22,6 +22,14 @@ LIBAPI
 void TFC::UI::ContainerWidgetBase::CleanDataSource()
 {
 	// Item source is not empty, clean the list first
+
+
+	if(this->observableObject)
+	{
+		for(auto& item : this->internalItems)
+			static_cast<ObservableObjectClass*>(item.data)->eventObjectUpdated -= EventHandler(ContainerWidgetBase::OnCollectionItemUpdated);
+	}
+
 	if(this->referenceWrapped)
 	{
 		for(auto& item : this->internalItems)
@@ -45,6 +53,9 @@ void ContainerWidgetBase::SetItemsSource(std::shared_ptr<Containers::ContainerBa
 
 	this->referenceWrappingValidated = false;
 	this->referenceWrapped = false;
+
+	this->observableObjectValidated = false;
+	this->observableObject = false;
 
 	if(ref)
 	{
@@ -75,6 +86,19 @@ void ContainerWidgetBase::SetItemsSource(std::shared_ptr<Containers::ContainerBa
 
 					this->referenceWrappingValidated = true;
 				}
+
+				if(!this->observableObjectValidated)
+				{
+					auto observableObject = dynamic_cast<TFC::ObservableObjectClass*>(&item);
+					if(observableObject)
+						this->observableObject = true;
+					else
+						this->observableObject = false;
+
+					this->observableObjectValidated = true;
+				}
+
+
 				ProcessInsertItem(item, iter.GetStorageAddress());
 				++iter;
 			}
@@ -89,6 +113,12 @@ TFC::UI::ContainerWidgetBase::~ContainerWidgetBase()
 	{
 		this->observableCollection->eventItemInserted -= EventHandler(ContainerWidgetBase::OnCollectionItemInserted);
 		this->observableCollection->eventItemRemoved -= EventHandler(ContainerWidgetBase::OnCollectionItemRemoved);
+	}
+
+	if(this->observableObject)
+	{
+		for(auto& item : this->internalItems)
+			static_cast<ObservableObjectClass*>(item.data)->eventObjectUpdated -= EventHandler(ContainerWidgetBase::OnCollectionItemUpdated);
 	}
 
 	if(this->referenceWrapped)
@@ -122,7 +152,14 @@ void TFC::UI::ContainerWidgetBase::OnCollectionItemRemoved(
 	TFC::Containers::ObservableContainerBase* source,
 	TFC::Containers::ItemEventArgs& args)
 {
+	void const* thisItemAddress = args.item.GetStorageAddress();
 
+	auto objectItem = GetObjectItemByStorageAddress(thisItemAddress);
+	RemoveItem(objectItem, thisItemAddress);
+
+	internalItems.erase(indexBySource.at(thisItemAddress));
+	indexBySource.erase(thisItemAddress);
+	indexByObjectItem.erase(objectItem);
 }
 
 Elm_Object_Item* TFC::UI::ContainerWidgetBase::GetObjectItemByStorageAddress(void const* itemDataAddress)
@@ -151,15 +188,21 @@ void TFC::UI::ContainerWidgetBase::ProcessInsertItem(ObjectClass& obj,
 	else
 	{
 		dataPtr = &obj;
+
+		if(this->observableObject)
+		{
+			ObservableObjectClass* obj = static_cast<ObservableObjectClass*>(dataPtr);
+			obj->eventObjectUpdated += EventHandler(ContainerWidgetBase::OnCollectionItemUpdated);
+		}
 	}
 
 	// Insert the new row in internal list
-	auto& newItemIter = *internalItems.emplace(internalItems.end(), dataPtr);
-	indexBySource.emplace(itemAddress, &newItemIter);
+	auto newItemIter = internalItems.emplace(internalItems.end(), dataPtr);
+	indexBySource.emplace(itemAddress, newItemIter);
 
 	// Perform add item to the actual widget
-	newItemIter.itemHandle = AddItem(obj, itemAddress, GetObjectItemByStorageAddress(itemAddressAfter));
-	indexByObjectItem.emplace(newItemIter.itemHandle, &newItemIter);
+	newItemIter->itemHandle = AddItem(obj, itemAddress, GetObjectItemByStorageAddress(itemAddressAfter));
+	indexByObjectItem.emplace(newItemIter->itemHandle, &*newItemIter);
 }
 
 LIBAPI
@@ -249,4 +292,11 @@ LIBAPI
 void TFC::UI::ContainerWidgetBase::OnItemClicked(ObjectClass& item)
 {
 	eventItemClicked(this, item);
+}
+
+void TFC::UI::ContainerWidgetBase::OnCollectionItemUpdated(TFC::ObservableObjectClass* source,
+	void*)
+{
+	auto objectItem = GetObjectItemByStorageAddress(source);
+	UpdateItem(objectItem);
 }

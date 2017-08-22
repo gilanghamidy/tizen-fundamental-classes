@@ -40,7 +40,6 @@ namespace UI {
 		__declspec(property(get = GetItemsSource, put = SetItemsSource))
 		std::shared_ptr<Containers::ContainerBase> ItemsSource;
 #endif
-
 	protected:
 		struct ContainerWidgetItem
 		{
@@ -53,16 +52,17 @@ namespace UI {
 		ContainerWidgetBase(Evas_Object* item) : WidgetBase(item) { };
 		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) = 0;
 		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) = 0;
+		virtual void UpdateItem(Elm_Object_Item* item) = 0;
 
-		ContainerWidgetItem* GetWidgetItemByData(void* data) { return indexBySource.at(data); }
+		ContainerWidgetItem* GetWidgetItemByData(void* data) { return &*indexBySource.at(data); }
 		ObjectClass& GetDataByItemHandle(Elm_Object_Item* item) { return *indexByObjectItem.at(item)->data; }
 		virtual ~ContainerWidgetBase();
 
 		void OnItemClicked(ObjectClass& item);
 	private:
 		std::shared_ptr<Containers::ContainerBase> itemsSource;
-		std::deque<ContainerWidgetItem> internalItems;
-		std::map<void const*, ContainerWidgetItem*> indexBySource;
+		std::list<ContainerWidgetItem> internalItems;
+		std::map<void const*, std::list<ContainerWidgetItem>::iterator> indexBySource;
 		std::map<Elm_Object_Item*, ContainerWidgetItem*> indexByObjectItem;
 
 		void CleanDataSource();
@@ -70,9 +70,12 @@ namespace UI {
 		TFC::Containers::ObservableContainerBase* observableCollection { nullptr };
 		bool referenceWrapped { false };
 		bool referenceWrappingValidated { false };
+		bool observableObject { false };
+		bool observableObjectValidated { false };
 
 		void OnCollectionItemInserted(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ItemEventArgs& args);
 		void OnCollectionItemRemoved(TFC::Containers::ObservableContainerBase* source, TFC::Containers::ItemEventArgs& args);
+		void OnCollectionItemUpdated(TFC::ObservableObjectClass* source, void*);
 
 		void ProcessInsertItem(ObjectClass& obj, void const* itemAddress, void const* itemAddressAfter = nullptr);
 		Elm_Object_Item* GetObjectItemByStorageAddress(void const* itemBefore);
