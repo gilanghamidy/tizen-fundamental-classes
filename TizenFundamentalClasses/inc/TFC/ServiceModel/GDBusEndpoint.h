@@ -89,9 +89,10 @@ public:
 	typedef GVariant* SerializedType;
 	GVariantSerializer();
 
-	void Serialize(uint32_t args);
 	void Serialize(int64_t args);
 	void Serialize(int32_t args);
+	void Serialize(uint32_t args);
+	void Serialize(uint64_t args);
 	void Serialize(bool args);
 	void Serialize(double args);
 	void Serialize(std::string args);
@@ -104,7 +105,7 @@ public:
 	void Serialize(GVariantSerializer& p);
 
 	template<template<typename, typename> class TContainer, typename T, typename TAlloc>
-	void Serialize(TContainer<T, TAlloc> const& args)
+	TFC::Core::Metaprogramming::Void_T<typename TContainer<T, TAlloc>::value_type> Serialize(TContainer<T, TAlloc> const& args)
 	{
 		using namespace TFC::Serialization;
 
@@ -186,7 +187,7 @@ public:
 	void Deserialize(std::vector<int64_t>& target);
 
 	template<template<typename, typename> class TContainer, typename T, typename TAlloc>
-	void Deserialize(TContainer<T, TAlloc>& target)
+	TFC::Core::Metaprogramming::Void_T<typename TContainer<T, TAlloc>::value_type> Deserialize(TContainer<T, TAlloc>& target)
 	{
 		target.clear();
 		auto arrVariant = g_variant_iter_next_value(&iter);
