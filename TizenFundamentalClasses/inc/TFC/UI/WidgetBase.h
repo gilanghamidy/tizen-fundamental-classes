@@ -15,16 +15,17 @@
 namespace TFC {
 namespace UI {
 
+	template<typename T>
 	struct Coordinate {
-		double x;
-		double y;
+		T x;
+		T y;
 	};
 
-	static constexpr Coordinate HintFillAll { EVAS_HINT_FILL, EVAS_HINT_FILL };
-	static constexpr Coordinate HintExpandAll { EVAS_HINT_EXPAND, EVAS_HINT_EXPAND };
+	static constexpr Coordinate<double> HintFillAll { EVAS_HINT_FILL, EVAS_HINT_FILL };
+	static constexpr Coordinate<double> HintExpandAll { EVAS_HINT_EXPAND, EVAS_HINT_EXPAND };
 
 	class WidgetBase :
-			EventEmitterClass<WidgetBase>,
+			public EventEmitterClass<WidgetBase>,
 			public EFL::EFLProxyClass,
 			public ManagedClass
 	{
@@ -38,11 +39,11 @@ namespace UI {
 		bool IsVisible() const;
 		void SetVisible(bool b);
 
-		Coordinate GetWeight() const;
-		void SetWeight(Coordinate const& c);
+		Coordinate<double> GetWeight() const;
+		void SetWeight(Coordinate<double> const& c);
 
-		Coordinate GetAlign() const;
-		void SetAlign(Coordinate const& c);
+		Coordinate<double> GetAlign() const;
+		void SetAlign(Coordinate<double> const& c);
 
 #ifdef TFC_HAS_PROPERTY
 		__declspec(property(get = IsEnabled, put = SetEnabled))
@@ -52,10 +53,10 @@ namespace UI {
 		bool Visible;
 
 		__declspec(property(get = GetWeight, put = SetWeight))
-		Coordinate Weight;
+		Coordinate<double> Weight;
 
 		__declspec(property(get = GetAlign, put = SetAlign))
-		Coordinate Align;
+		Coordinate<double> Align;
 #endif
 
 	protected:

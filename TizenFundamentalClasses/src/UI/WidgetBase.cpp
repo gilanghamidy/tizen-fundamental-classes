@@ -72,29 +72,29 @@ WidgetBase::~WidgetBase()
 }
 
 LIBAPI
-void TFC::UI::WidgetBase::SetWeight(Coordinate const& c)
+void TFC::UI::WidgetBase::SetWeight(Coordinate<double> const& c)
 {
 	evas_object_size_hint_weight_set(this->widgetRootInternal, c.x, c.y);
 }
 
 LIBAPI
-Coordinate TFC::UI::WidgetBase::GetWeight() const
+Coordinate<double> TFC::UI::WidgetBase::GetWeight() const
 {
-	Coordinate ret;
+	Coordinate<double> ret;
 	evas_object_size_hint_weight_get(this->widgetRootInternal, &ret.x, &ret.y);
 	return ret;
 }
 
 LIBAPI
-void TFC::UI::WidgetBase::SetAlign(Coordinate const& c)
+void TFC::UI::WidgetBase::SetAlign(Coordinate<double> const& c)
 {
 	evas_object_size_hint_align_set(this->widgetRootInternal, c.x, c.y);
 }
 
 LIBAPI
-Coordinate TFC::UI::WidgetBase::GetAlign() const
+Coordinate<double> TFC::UI::WidgetBase::GetAlign() const
 {
-	Coordinate ret;
+	Coordinate<double> ret;
 	evas_object_size_hint_align_get(this->widgetRootInternal, &ret.x, &ret.y);
 	return ret;
 }

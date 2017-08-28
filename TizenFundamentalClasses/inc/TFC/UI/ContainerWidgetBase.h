@@ -25,7 +25,7 @@ namespace Containers {
 namespace UI {
 
 	class ContainerWidgetBase :
-		public WidgetBase,
+		public virtual WidgetBase,
 		EventEmitterClass<ContainerWidgetBase>
 	{
 		using EventEmitterClass<ContainerWidgetBase>::Event;
@@ -49,7 +49,6 @@ namespace UI {
 			ContainerWidgetItem(ObjectClass* data) : data(data) { }
 		};
 
-		ContainerWidgetBase(Evas_Object* item) : WidgetBase(item) { };
 		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) = 0;
 		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) = 0;
 		virtual void UpdateItem(Elm_Object_Item* item) = 0;

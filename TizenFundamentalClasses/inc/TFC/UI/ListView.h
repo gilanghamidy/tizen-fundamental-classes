@@ -10,6 +10,7 @@
 
 #include <TFC/Containers/ContainerBase.h>
 #include <TFC/UI/ContainerWidgetBase.h>
+#include <TFC/UI/Scroller.h>
 
 #define TFC_LISTITEM_DATACONTEXT "__tfc_datacontext"
 #define TFC_LISTITEM_DATACONTEXTTYPE "__tfc_datacontext_type"
@@ -249,6 +250,7 @@ namespace UI {
 	class ListViewBase :
 		public SelectorWidgetBase,
 		public TemplatedContainerWidgetBase,
+		public ScrollerBase,
 		EventEmitterClass<ListViewBase>
 	{
 	public:
@@ -269,9 +271,7 @@ namespace UI {
 	{
 		using EventEmitterClass<ListView>::Event;
 
-		EvasSmartEvent eventScrollingInternal;
-		EvasSmartEvent eventScrollingDownInternal;
-		EvasSmartEvent eventScrollingUpInternal;
+
 		EvasSmartEvent eventItemRealized;
 		EvasSmartEvent eventScrollingStartInternal;
 		EvasSmartEvent eventScrollingStopInternal;
@@ -290,14 +290,6 @@ namespace UI {
 		virtual void RemoveListItem(Elm_Object_Item* item) override;
 		virtual void UpdateItem(Elm_Object_Item* item) override;
 	public:
-		class ScrollEventInfo
-		{
-		private:
-			ListView const& ref;
-
-			mutable int x;
-			mutable int y;
-		};
 
 
 		ListView(Evas_Object* parent);
@@ -310,8 +302,7 @@ namespace UI {
 		bool GetOverscroll() { return overscroll; };
 
 		Event<ObjectClass&> eventItemLongClicked;
-		Event<ScrollEventInfo const&> eventScrolledUp;
-		Event<ScrollEventInfo const&> eventScrolledDown;
+
 
 #ifdef TFC_HAS_PROPERTY
 		__declspec(property(get = GetOverscroll, put = SetOverscroll))
