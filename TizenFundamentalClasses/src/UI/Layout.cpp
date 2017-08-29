@@ -105,3 +105,99 @@ TFC::UI::ApplicationLayout::ApplicationLayout(Evas_Object* parent) :
 {
 
 }
+
+LIBAPI
+void TFC::UI::ApplicationLayout::FloatingButton::SetPosition(Eext_Floatingbutton_Pos pos)
+{
+	if(pos != position)
+	{
+		if(pos == EEXT_FLOATINGBUTTON_LEFT_OUT || pos == EEXT_FLOATINGBUTTON_RIGHT_OUT)
+		{
+			eext_floatingbutton_pos_set(floatingObj, pos);
+			position = pos == EEXT_FLOATINGBUTTON_LEFT_OUT ? EEXT_FLOATINGBUTTON_LEFT : EEXT_FLOATINGBUTTON_RIGHT;
+		}
+		else
+		{
+			auto currentPos = eext_floatingbutton_pos_get(floatingObj);
+
+			if(currentPos != EEXT_FLOATINGBUTTON_LEFT_OUT || currentPos != EEXT_FLOATINGBUTTON_RIGHT_OUT)
+			{
+				eext_floatingbutton_pos_set(floatingObj, pos);
+			}
+			else
+			{
+				eext_floatingbutton_pos_set(floatingObj, pos == EEXT_FLOATINGBUTTON_LEFT ? EEXT_FLOATINGBUTTON_LEFT_OUT : EEXT_FLOATINGBUTTON_RIGHT_OUT);
+			}
+
+			position = pos;
+		}
+	}
+}
+
+LIBAPI
+Eext_Floatingbutton_Pos TFC::UI::ApplicationLayout::FloatingButton::GetPosition()
+{
+	return position;
+}
+
+LIBAPI
+void TFC::UI::ApplicationLayout::FloatingButton::SetMovable(bool val)
+{
+	eext_floatingbutton_movement_block_set(floatingObj, val ? EINA_FALSE : EINA_TRUE);
+}
+
+LIBAPI
+bool TFC::UI::ApplicationLayout::FloatingButton::GetMovable()
+{
+	return eext_floatingbutton_movement_block_get(floatingObj) == EINA_FALSE ? true : false;
+}
+
+LIBAPI
+void TFC::UI::ApplicationLayout::FloatingButton::BringIn()
+{
+	auto currentPos = eext_floatingbutton_pos_get(floatingObj);
+
+	if(currentPos != EEXT_FLOATINGBUTTON_LEFT_OUT || currentPos != EEXT_FLOATINGBUTTON_RIGHT_OUT)
+	{
+		return;
+	}
+
+	bool isMovable = true;
+	if(!this->Movable)
+	{
+		isMovable = false;
+		this->Movable = true;
+	}
+
+	eext_floatingbutton_pos_bring_in(floatingObj, position);
+
+	if(!isMovable)
+	{
+		this->Movable = false;
+	}
+}
+
+LIBAPI
+void TFC::UI::ApplicationLayout::FloatingButton::BringOut()
+{
+	auto currentPos = eext_floatingbutton_pos_get(floatingObj);
+
+	if(currentPos == EEXT_FLOATINGBUTTON_LEFT_OUT || currentPos == EEXT_FLOATINGBUTTON_RIGHT_OUT)
+	{
+		return;
+	}
+
+	bool isMovable = true;
+	if(!this->Movable)
+	{
+		isMovable = false;
+		this->Movable = true;
+	}
+
+	eext_floatingbutton_pos_bring_in(floatingObj, position == EEXT_FLOATINGBUTTON_LEFT ? EEXT_FLOATINGBUTTON_LEFT_OUT : EEXT_FLOATINGBUTTON_RIGHT_OUT);
+
+	if(!isMovable)
+	{
+		this->Movable = false;
+	}
+}

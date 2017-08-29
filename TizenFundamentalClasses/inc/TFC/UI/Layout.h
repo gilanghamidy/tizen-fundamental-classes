@@ -57,17 +57,32 @@ namespace UI {
 			void SetImage(std::string const& ref);
 			std::string GetImage();
 
-#ifdef TFC_HAS_PROPERTY
-		__declspec(property(get = GetImage, put = SetImage))
-		std::string Image;
+			void SetPosition(Eext_Floatingbutton_Pos pos);
+			Eext_Floatingbutton_Pos GetPosition();
 
-		__declspec(property(get = GetVisible, put = SetVisible))
-		bool Visible;
+			void SetMovable(bool val);
+			bool GetMovable();
+
+			void BringIn();
+			void BringOut();
+
+#ifdef TFC_HAS_PROPERTY
+			__declspec(property(get = GetImage, put = SetImage))
+			std::string Image;
+
+			__declspec(property(get = GetVisible, put = SetVisible))
+			bool Visible;
+
+			__declspec(property(get = GetPosition, put = SetPosition))
+			Eext_Floatingbutton_Pos Position;
+
+			__declspec(property(get = GetMovable, put = SetMovable))
+			bool Movable;
 #endif
 
 		private:
 			FloatingButton(Evas_Object* layout);
-
+			Eext_Floatingbutton_Pos position;
 			Evas_Object* buttonObj;
 			Evas_Object* imageObj;
 			Evas_Object* floatingObj;
