@@ -258,8 +258,8 @@ namespace UI {
 	protected:
 		//ListViewBase(Evas_Object* item) : SelectorWidgetBase(item) { }
 
-		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) override final;
-		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) override final;
+		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) override;
+		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) override;
 
 		virtual Elm_Object_Item* AddListItem(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore) = 0;
 		virtual void RemoveListItem(Elm_Object_Item* item) = 0;
@@ -283,15 +283,14 @@ namespace UI {
 
 		bool overscroll { false };
 
-		static void OnItemClickedInternal(void* data, Evas_Object* obj, void* dataItem);
 
 	protected:
 		virtual Elm_Object_Item* AddListItem(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* itemBefore) override;
 		virtual void RemoveListItem(Elm_Object_Item* item) override;
 		virtual void UpdateItem(Elm_Object_Item* item) override;
+		static void OnItemClickedInternal(void* data, Evas_Object* obj, void* dataItem);
+
 	public:
-
-
 		ListView(Evas_Object* parent);
 		virtual ~ListView();
 
@@ -310,6 +309,97 @@ namespace UI {
 #endif
 	};
 
+	class GroupTemplateBase
+	{
+	public:
+		class ItemGroup : public ObjectClass
+		{
+		public:
+			virtual ~ItemGroup();
+			virtual bool Less(ItemGroup const& other) const = 0;
+		};
+
+		virtual ~GroupTemplateBase();
+		virtual bool CanProcess(ObjectClass& obj) const = 0;
+		virtual std::unique_ptr<ItemGroup> GetGroupFor(ObjectClass const& obj) const = 0;
+		virtual ItemTemplateBase const& GetItemTemplate() = 0;
+	};
+
+	template<typename T>
+	class GroupTemplate : public GroupTemplateBase
+	{
+	public:
+		virtual bool CanProcess(ObjectClass& obj) const override final
+		{
+			try
+			{
+				wrapper_cast<T&>(obj);
+				return true;
+			}
+			catch(TFCException const& ex)
+			{
+				return false;
+			}
+		}
+
+		virtual std::unique_ptr<ItemGroup> GetGroupFor(ObjectClass const& obj) const override final
+		{
+			return GetGroupFor(*static_cast<ObjectClass const*>(&obj));
+		}
+
+		virtual std::unique_ptr<ItemGroup> GetGroupFor(T const& obj) const = 0;
+	};
+
+	class GroupedListView :
+			public ListView,
+			EventEmitterClass<GroupedListView>
+	{
+	public:
+		GroupedListView(Evas_Object* parent);
+
+		void SetGroupTemplate(std::shared_ptr<GroupTemplateBase> const& it);
+		std::shared_ptr<GroupTemplateBase> GetGroupTemplate();
+
+#ifdef TFC_HAS_PROPERTY
+		__declspec(property(get = GetGroupTemplate, put = SetGroupTemplate))
+		std::shared_ptr<GroupTemplateBase> GroupTemplate;
+#endif
+
+	protected:
+		virtual Elm_Object_Item* AddItem(ObjectClass& obj, void const* baseAddress, Elm_Object_Item* itemBefore) override;
+		virtual void RemoveItem(Elm_Object_Item* item, void const* baseAddress) override;
+
+		Elm_Object_Item* AddListItemChild(void* data, Elm_Gen_Item_Class* itemClass, Elm_Object_Item* parent, Elm_Object_Item* itemBefore);
+
+	private:
+		struct GroupInfo
+		{
+			Elm_Object_Item* objectItem { nullptr };
+			size_t objectCount { 0 };
+			ItemTemplateBase::ItemPayload groupItemPayload;
+
+			GroupInfo(ItemTemplateBase::ItemPayload&& payload) :
+				groupItemPayload(std::move(payload))
+			{
+
+			}
+		};
+
+		class ItemGroupComparer
+		{
+		public:
+			bool operator()(std::unique_ptr<GroupTemplateBase::ItemGroup> const& a,
+							std::unique_ptr<GroupTemplateBase::ItemGroup> const& b)
+			{
+				return a->Less(*b);
+			}
+		};
+
+		std::map<std::unique_ptr<GroupTemplateBase::ItemGroup>, GroupInfo, ItemGroupComparer> groupInfo;
+		std::map<void const*, decltype(groupInfo)::iterator> indexByBaseAddress;
+
+		std::shared_ptr<GroupTemplateBase> groupTemplate;
+	};
 }}
 
 

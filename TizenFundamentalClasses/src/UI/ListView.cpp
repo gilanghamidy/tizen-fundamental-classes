@@ -162,3 +162,101 @@ LIBAPI
 void TFC::UI::ListView::ScrollToBottom()
 {
 }
+
+LIBAPI
+TFC::UI::GroupTemplateBase::ItemGroup::~ItemGroup()
+{
+}
+
+LIBAPI
+TFC::UI::GroupTemplateBase::~GroupTemplateBase()
+{
+}
+
+
+LIBAPI
+TFC::UI::GroupedListView::GroupedListView(Evas_Object* parent) :
+		WidgetBase(elm_genlist_add(parent)),
+		ListView(parent)
+{
+}
+
+LIBAPI
+void TFC::UI::GroupedListView::SetGroupTemplate(
+		const std::shared_ptr<GroupTemplateBase>& it)
+{
+	this->groupTemplate = it;
+}
+
+LIBAPI
+std::shared_ptr<GroupTemplateBase> TFC::UI::GroupedListView::GetGroupTemplate()
+{
+	return this->groupTemplate;
+}
+
+LIBAPI
+Elm_Object_Item* TFC::UI::GroupedListView::AddItem(ObjectClass& obj,
+		const void* baseAddress, Elm_Object_Item* itemBefore)
+{
+	// Get group info
+	auto itemGroup = this->groupTemplate->GetGroupFor(obj);
+
+	// Check if it is exist
+	auto groupInfoIter = this->groupInfo.find(itemGroup);
+	if(groupInfoIter == this->groupInfo.end())
+	{
+		// If it is not exist, create new group item
+		auto insertResult = this->groupInfo.insert(std::make_pair(std::move(itemGroup), GroupInfo { this->groupTemplate->GetItemTemplate().PackPayload(*groupInfoIter->first, this) }));
+		groupInfoIter = insertResult.first;
+
+		Elm_Object_Item* itemBefore = nullptr;
+		if(groupInfoIter != this->groupInfo.begin())
+		{
+			auto previousGroupInfo = groupInfoIter;
+			--previousGroupInfo;
+
+			itemBefore = previousGroupInfo->second.objectItem;
+		}
+
+		groupInfoIter->second.objectItem = this->AddListItem(&groupInfoIter->second.groupItemPayload, groupInfoIter->second.groupItemPayload, itemBefore);
+	}
+
+	++groupInfoIter->second.objectCount;
+	indexByBaseAddress[baseAddress] = groupInfoIter;
+
+	// Get templated item
+	auto& templatedItem = this->GetTemplatedItem(obj, baseAddress);
+	return this->AddListItemChild(&templatedItem, templatedItem, groupInfoIter->second.objectItem, itemBefore);
+}
+
+LIBAPI
+void TFC::UI::GroupedListView::RemoveItem(Elm_Object_Item* item,
+		const void* baseAddress)
+{
+	auto iter = this->indexByBaseAddress[baseAddress];
+	--iter->second.objectCount;
+
+	this->RemoveListItem(item);
+	this->RemoveTemplatedItem(baseAddress);
+	SelectorWidgetBase::RemoveItem(item, baseAddress);
+	this->indexByBaseAddress.erase(baseAddress);
+
+	if(iter->second.objectCount == 0)
+	{
+		this->RemoveListItem(iter->second.objectItem);
+		this->groupInfo.erase(iter);
+	}
+}
+
+LIBAPI
+Elm_Object_Item* TFC::UI::GroupedListView::AddListItemChild(void* data,
+		Elm_Gen_Item_Class* itemClass, Elm_Object_Item* parent,
+		Elm_Object_Item* itemBefore)
+{
+	Elm_Object_Item* ret = nullptr;
+	if(itemBefore == nullptr)
+		ret = elm_genlist_item_append(widgetRoot, itemClass, data, parent, ELM_GENLIST_ITEM_NONE, OnItemClickedInternal, data);
+	else
+		ret = elm_genlist_item_insert_before(widgetRoot, itemClass, data, parent, itemBefore, ELM_GENLIST_ITEM_NONE, OnItemClickedInternal, data);
+	return ret;
+}
