@@ -484,6 +484,58 @@ protected:
 	virtual ~ObservableObjectClass();
 };
 
+template<typename T, bool = std::is_base_of<ObservableObjectClass, T>::value>
+class LIBAPI SharedObservableObject;
+
+template<typename T>
+class LIBAPI SharedObservableObject<T, true> :
+		public ObservableObjectClass,
+		std::shared_ptr<T>
+{
+public:
+	SharedObservableObject() = default;
+	SharedObservableObject(T* other) : std::shared_ptr<T>(other)
+	{
+		this->get()->eventObjectUpdated += EventHandler(SharedObservableObject::OnInternalObjectUpdated);
+		this->get()->eventFieldUpdated += EventHandler(SharedObservableObject::OnInternalFieldUpdated);
+
+	}
+
+	SharedObservableObject(SharedObservableObject<T> const& other) : std::shared_ptr<T>(other)
+	{
+		this->get()->eventObjectUpdated += EventHandler(SharedObservableObject::OnInternalObjectUpdated);
+		this->get()->eventFieldUpdated += EventHandler(SharedObservableObject::OnInternalFieldUpdated);
+	}
+
+	SharedObservableObject(SharedObservableObject<T>&& other) : std::shared_ptr<T>(std::move(other))
+	{
+		this->get()->eventObjectUpdated += EventHandler(SharedObservableObject::OnInternalObjectUpdated);
+		this->get()->eventFieldUpdated += EventHandler(SharedObservableObject::OnInternalFieldUpdated);
+	}
+
+	~SharedObservableObject()
+	{
+		this->get()->eventObjectUpdated -= EventHandler(SharedObservableObject::OnInternalObjectUpdated);
+		this->get()->eventFieldUpdated -= EventHandler(SharedObservableObject::OnInternalFieldUpdated);
+	}
+
+	using std::shared_ptr<T>::get;
+	using std::shared_ptr<T>::operator*;
+	using std::shared_ptr<T>::operator->;
+	using std::shared_ptr<T>::operator bool;
+
+private:
+	void OnInternalObjectUpdated(ObservableObjectClass* inner, void*)
+	{
+		OnObjectUpdated();
+	}
+
+	void OnInternalFieldUpdated(ObservableObjectClass* inner, std::string const& str)
+	{
+		OnFieldUpdated(str);
+	}
+};
+
 namespace Core {
 
 TFC_ExceptionDeclare	(InvocationException, RuntimeException);

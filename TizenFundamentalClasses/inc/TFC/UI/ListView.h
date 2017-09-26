@@ -226,6 +226,39 @@ namespace UI {
 		std::map<std::string, PartFunc> funcTable;
 	};
 
+	template<typename T>
+	class ItemTemplateList :
+		public ItemTemplateBase
+	{
+	public:
+		ItemTemplateList() : ItemTemplateBase("") { }
+
+		virtual ItemPayload PackPayload(ObjectClass& item, ContainerWidgetBase* widget) const override
+		{
+			auto& templateForThisObject = GetItemTemplate(*static_cast<T*>(&item));
+			return { *const_cast<ItemTemplate<T>*>(&templateForThisObject), const_cast<typename std::remove_const<T>::type*>(&wrapper_cast<T&>(item)), widget };
+		}
+
+		virtual bool CanProcess(ObjectClass& obj) const override
+		{
+			try
+			{
+				wrapper_cast<T&>(obj);
+				return true;
+			}
+			catch(TFCException const& ex)
+			{
+				return false;
+			}
+		}
+
+		virtual char* GetText(void* obj, Evas_Object* root, char const* part) override { return nullptr; }
+		virtual Evas_Object* GetContent(void* obj, Evas_Object* root, char const* part) override { return nullptr; }
+
+	protected:
+		virtual ItemTemplate<T> const& GetItemTemplate(T const& item) const = 0;
+	};
+
 	class TemplatedContainerWidgetBase :
 		public virtual ContainerWidgetBase
 	{
