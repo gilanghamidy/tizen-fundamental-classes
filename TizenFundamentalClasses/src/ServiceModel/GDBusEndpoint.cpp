@@ -90,43 +90,85 @@ void GVariantSerializer::Serialize(std::string args)
 LIBAPI
 void GVariantSerializer::Serialize(std::vector<uint8_t> const& args)
 {
-	GVariantBuilder arrayBuilder;
-	g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
-
-	for(auto& obj : args)
+	if (args.empty())
 	{
-		g_variant_builder_add(&arrayBuilder, "y", obj);
+		g_variant_builder_add_value(&builder, g_variant_new_array(G_VARIANT_TYPE_BYTE, nullptr, 0));
 	}
+	else
+	{
+		GVariantBuilder arrayBuilder;
+		g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
 
-	g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+		for(auto& obj : args)
+		{
+			g_variant_builder_add(&arrayBuilder, "y", obj);
+		}
+
+		g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+	}
 }
 
 LIBAPI
 void GVariantSerializer::Serialize(std::vector<int32_t> const& args)
 {
-	GVariantBuilder arrayBuilder;
-	g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
-
-	for(auto& obj : args)
+	if (args.empty())
 	{
-		g_variant_builder_add(&arrayBuilder, "i", obj);
+		g_variant_builder_add_value(&builder, g_variant_new_array(G_VARIANT_TYPE_INT32, nullptr, 0));
 	}
+	else
+	{
+		GVariantBuilder arrayBuilder;
+		g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
 
-	g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+		for(auto& obj : args)
+		{
+			g_variant_builder_add(&arrayBuilder, "i", obj);
+		}
+
+		g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+	}
+}
+
+LIBAPI
+void GVariantSerializer::Serialize(std::vector<uint32_t> const& args)
+{
+	if (args.empty())
+	{
+		g_variant_builder_add_value(&builder, g_variant_new_array(G_VARIANT_TYPE_INT32, nullptr, 0));
+	}
+	else
+	{
+		GVariantBuilder arrayBuilder;
+		g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
+
+		for(auto& obj : args)
+		{
+			g_variant_builder_add(&arrayBuilder, "u", obj);
+		}
+
+		g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+	}
 }
 
 LIBAPI
 void GVariantSerializer::Serialize(std::vector<int64_t> const& args)
 {
-	GVariantBuilder arrayBuilder;
-	g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
-
-	for(auto& obj : args)
+	if (args.empty())
 	{
-		g_variant_builder_add(&arrayBuilder, "x", obj);
+		g_variant_builder_add_value(&builder, g_variant_new_array(G_VARIANT_TYPE_INT64, nullptr, 0));
 	}
+	else
+	{
+		GVariantBuilder arrayBuilder;
+		g_variant_builder_init(&arrayBuilder, G_VARIANT_TYPE_ARRAY);
 
-	g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+		for(auto& obj : args)
+		{
+			g_variant_builder_add(&arrayBuilder, "x", obj);
+		}
+
+		g_variant_builder_add_value(&builder, g_variant_builder_end(&arrayBuilder));
+	}
 }
 
 LIBAPI
@@ -880,6 +922,19 @@ void TFC::ServiceModel::GVariantDeserializer::Deserialize(std::vector<int32_t>& 
 	auto arrIter = g_variant_iter_new(arrVariant);
 	int32_t value;
 	while (g_variant_iter_next(arrIter, "i", &value)) {
+		target.push_back(value);
+	}
+	g_variant_iter_free(arrIter);
+}
+
+LIBAPI
+void TFC::ServiceModel::GVariantDeserializer::Deserialize(std::vector<uint32_t>& target) {
+	target.clear();
+	dlog_print(DLOG_DEBUG, "TFC-RPC", "Deserialize vector uint32_t");
+	auto arrVariant = g_variant_iter_next_value(&iter);
+	auto arrIter = g_variant_iter_new(arrVariant);
+	int32_t value;
+	while (g_variant_iter_next(arrIter, "u", &value)) {
 		target.push_back(value);
 	}
 	g_variant_iter_free(arrIter);

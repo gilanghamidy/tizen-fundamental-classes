@@ -99,6 +99,7 @@ public:
 
 	void Serialize(std::vector<uint8_t> const& args);
 	void Serialize(std::vector<int32_t> const& args);
+	void Serialize(std::vector<uint32_t> const& args);
 	void Serialize(std::vector<int64_t> const& args);
 
 	GVariantSerializer CreateScope();
@@ -184,6 +185,7 @@ public:
 
 	void Deserialize(std::vector<uint8_t>& target);
 	void Deserialize(std::vector<int32_t>& target);
+	void Deserialize(std::vector<uint32_t>& target);
 	void Deserialize(std::vector<int64_t>& target);
 
 	template<template<typename, typename> class TContainer, typename T, typename TAlloc>
