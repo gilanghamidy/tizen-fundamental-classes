@@ -45,6 +45,10 @@
 #include <tuple>
 #include <type_traits>
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
 
 namespace TFC
 {
@@ -292,13 +296,22 @@ private:
 	std::string objectPath;
 	std::string interfaceName;
 	GBusType busType;
+	GDBusConfiguration config;
 
-	void ReceiveEvent(char const* eventName, GVariant* eventArg);
+	std::list<void*> connectionPool;
+	std::mutex poolMutex;
+	std::atomic<uint8_t> currentRunning { 0 };
+	uint8_t maxOpenConnection { 8 };
+	std::atomic<int32_t> lastMaxConnectionTime { 0 };
+	std::condition_variable waitFlag;
+
+	void* ObtainConnection();
+	void ReleaseConnection(void* handle);
+	void ReceiveEvent(const char* objectPath, const char* ifaceName, char const* eventName, GVariant* eventArg);
+
 public:
-
-
 	GDBusClient(GDBusConfiguration const& config, char const* objectPath, char const* interfaceName);
-	GVariant* RemoteCall(char const* methodName, GVariant* parameter);
+	GVariant* RemoteCall(char const* objectPath, char const* interfaceName, char const* methodName, GVariant* parameter);
 	void RegisterEvent();
 	bool IsClosed()
 	{

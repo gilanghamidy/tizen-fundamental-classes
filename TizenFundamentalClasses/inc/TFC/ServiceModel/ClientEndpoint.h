@@ -64,7 +64,9 @@ struct InterfacePrefixInspector
 template<typename T>
 struct EventEmissionInfo
 {
-	char const* eventName;
+	std::string objectPath;
+	std::string interfaceName;
+	std::string eventName;
 	T eventArg;
 };
 
@@ -73,8 +75,9 @@ class ClientEndpoint : public T
 {
 private:
 	std::string objectPath;
+	std::string interfaceName;
 	typedef typename TEndpoint::Channel Channel;
-	typename Channel::Client endpoint;
+	std::shared_ptr<typename Channel::Client> endpoint;
 
 	struct EventDelegate
 	{
@@ -94,11 +97,14 @@ private:
 		auto& typeDescription = Core::TypeInfo<T>::typeDescription;
 
 		auto serialized = Serializer::Serialize(args...);
-		return ReturnTypeDeserializer::Deserialize(endpoint.RemoteCall(typeDescription.GetFunctionNameByPointer(ptr), serialized));
+		return ReturnTypeDeserializer::Deserialize(endpoint->RemoteCall(objectPath.c_str(), interfaceName.c_str(), typeDescription.GetFunctionNameByPointer(ptr), serialized));
 	}
 
 	void EventReceived(typename Channel::Client* sender, EventEmissionInfo<typename Channel::SerializedType> const& info)
 	{
+		if(objectPath != info.objectPath || interfaceName != info.interfaceName)
+			return;
+
 		auto data = eventMap.find(info.eventName);
 		if(data != eventMap.end())
 			data->second.raiseFunc(this, data->second.event, info.eventArg);
@@ -123,11 +129,13 @@ protected:
 		return InvokeInternal<TMemPtr>(ptr, param...);
 	}
 
-	ClientEndpoint(char const* objectPath) :
-		endpoint(TEndpoint::configuration, objectPath, Core::GetInterfaceName(InterfacePrefixInspector<TEndpoint>::value, typeid(T)).c_str())
+	ClientEndpoint(std::shared_ptr<typename Channel::Client> endpoint, char const* objectPath) :
+		objectPath(objectPath),
+		interfaceName(Core::GetInterfaceName(InterfacePrefixInspector<TEndpoint>::value, typeid(T))),
+		endpoint(std::move(endpoint))
 	{
 		typedef ClientEndpoint<TEndpoint, T> EP;
-		endpoint.eventEventReceived += EventHandler(EP::EventReceived);
+		this->endpoint->eventEventReceived += EventHandler(EP::EventReceived);
 	}
 
 	template<typename TArg>
@@ -140,6 +148,12 @@ protected:
 			&(this->*eventPtr),
 			ClientEndpoint<TEndpoint, T>::RaiseFunction<TArg>
 		}));
+	}
+
+	~ClientEndpoint()
+	{
+		typedef ClientEndpoint<TEndpoint, T> EP;
+		endpoint->eventEventReceived -= EventHandler(EP::EventReceived);
 	}
 
 public:

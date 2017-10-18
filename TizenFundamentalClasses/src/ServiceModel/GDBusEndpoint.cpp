@@ -23,6 +23,7 @@
 
 #include "TFC/Core.h"
 #include "TFC/ServiceModel/GDBusEndpoint.h"
+#include "TFC/Util/Logger.h"
 
 #include <glib-2.0/gio/gio.h>
 
@@ -32,7 +33,7 @@
 #include <string>
 
 using namespace TFC::ServiceModel;
-
+using TFC::Util::Logger;
 
 LIBAPI
 GVariantSerializer::GVariantSerializer()
@@ -251,11 +252,11 @@ bool GVariantDeserializer::DeserializeImpl<bool>(SerializedType obj)
 
 LIBAPI
 TFC::ServiceModel::GDBusClient::GDBusClient(GDBusConfiguration const& config,
-		const char* objectPath, const char* interfaceName) : objectPath(objectPath), interfaceName(interfaceName) {
+		const char* objectPath, const char* interfaceName) : objectPath(objectPath), interfaceName(interfaceName), config(config) {
 	this->busType = config.busType;
 
-	TFCAssert<ArgumentException>(objectPath != nullptr && objectPath[0] != '\0', "Object path cannot be null or empty string.");
-	TFCAssert<ArgumentException>(interfaceName != nullptr && interfaceName[0] != '\0', "Interface name cannot be null or empty string.");
+	//TFCAssert<ArgumentException>(objectPath != nullptr && objectPath[0] != '\0', "Object path cannot be null or empty string.");
+	//TFCAssert<ArgumentException>(interfaceName != nullptr && interfaceName[0] != '\0', "Interface name cannot be null or empty string.");
 
 	GError* err = nullptr;
 
@@ -328,21 +329,33 @@ public:
 }
 
 LIBAPI
-GVariant* TFC::ServiceModel::GDBusClient::RemoteCall(const char* methodName, GVariant* parameter) {
+GVariant* TFC::ServiceModel::GDBusClient::RemoteCall(char const* objectPath, char const* interfaceName, const char* methodName, GVariant* parameter)
+{
 
 	if(methodName == nullptr || methodName[0] == '\0')
 		throw ArgumentException("Method name cannot be null or empty string.");
 
 	dlog_print(DLOG_DEBUG, "RPC-Test", "Calling: %s", methodName);
 
+	struct ConnectionHandle
+	{
+		void* handle;
+		GDBusClient& parent;
+
+		ConnectionHandle(GDBusClient& parent) : parent(parent) { handle = parent.ObtainConnection(); }
+		~ConnectionHandle() { parent.ReleaseConnection(handle); }
+	};
+
+	std::unique_ptr<ConnectionHandle> thisConnection(new ConnectionHandle(*this));
+
 	GError* err = nullptr;
 	GVariant* ptr = nullptr;
 
 	// Call the remote method based on the bus type
 	if(busType == G_BUS_TYPE_NONE)
-		ptr = g_dbus_connection_call_sync((GDBusConnection*)this->handle, nullptr, objectPath.c_str(), interfaceName.c_str(), methodName, parameter, nullptr, G_DBUS_CALL_FLAGS_NONE, G_MAXINT, nullptr, &err);
+		ptr = g_dbus_connection_call_sync((GDBusConnection*)thisConnection->handle, nullptr, objectPath, interfaceName, methodName, parameter, nullptr, G_DBUS_CALL_FLAGS_NONE, G_MAXINT, nullptr, &err);
 	else
-		ptr = g_dbus_proxy_call_sync((GDBusProxy*)this->handle, methodName, parameter, G_DBUS_CALL_FLAGS_NONE, G_MAXINT, nullptr, &err);
+		ptr = g_dbus_proxy_call_sync((GDBusProxy*)thisConnection->handle, methodName, parameter, G_DBUS_CALL_FLAGS_NONE, G_MAXINT, nullptr, &err);
 
 	dlog_print(DLOG_DEBUG, "RPC-Test", "Result: %d", ptr);
 
@@ -410,6 +423,98 @@ GVariant* TFC::ServiceModel::GDBusClient::RemoteCall(const char* methodName, GVa
 	}
 
 	return ptr;
+}
+
+LIBAPI
+void* TFC::ServiceModel::GDBusClient::ObtainConnection()
+{
+	void* theConnection = nullptr;
+	TFC_Log(Logger::Verbose, "GDBusClient", "Enter obtain connection");
+
+	{
+		std::unique_lock<std::mutex> lock(this->poolMutex);
+
+		if(this->connectionPool.size() != 0)
+		{
+			// Get the front
+			theConnection = this->connectionPool.front();
+
+			// Erase the front in pool
+			this->connectionPool.erase(this->connectionPool.begin());
+		}
+	}
+
+	// If it is allowed to open new connection, proceed
+	if(theConnection == nullptr && this->currentRunning < this->maxOpenConnection)
+	{
+		GError* err = nullptr;
+
+		// Check if the user speficy bus type NONE
+		if(this->busType == G_BUS_TYPE_NONE)
+		{
+			std::string realPath("unix:path=");
+			realPath.append(config.busPath);
+
+			// Create connection using direct addressing
+			theConnection = g_dbus_connection_new_for_address_sync(realPath.c_str(), G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT, nullptr, nullptr, &err);
+			//g_dbus_connection_set_exit_on_close((GDBusConnection*)this->handle, false);
+		}
+		else if(this->busType == G_BUS_TYPE_SYSTEM || this->busType == G_BUS_TYPE_SESSION)
+		{
+			// Create connection using DBus proxy
+			theConnection = g_dbus_proxy_new_for_bus_sync(config.busType, config.proxyFlags, nullptr, config.busName, objectPath.c_str(), interfaceName.c_str(), nullptr, &err);
+		}
+
+		if(err != nullptr)
+		{
+			std::string errStr("Cannot initialize client for object path: ");
+			errStr += objectPath;
+			errStr += "; Reason: ";
+			errStr += err->message;
+
+			throw GDBusException(std::move(errStr));
+		}
+	}
+	else if(theConnection == nullptr)
+	{
+		// Else, wait until next available connection
+		std::unique_lock<std::mutex> lock(this->poolMutex);
+		this->waitFlag.wait(lock, [this] { return !this->connectionPool.empty(); });
+
+		if(this->connectionPool.size() != 0)
+		{
+			// Get the front
+			theConnection = this->connectionPool.front();
+
+			// Erase the front in pool
+			this->connectionPool.erase(this->connectionPool.begin());
+		}
+	}
+
+
+	TFCAssert<GDBusException>(theConnection != nullptr, "Failed to obtain new connection");
+
+	++this->currentRunning;
+	return theConnection;
+}
+
+LIBAPI
+void TFC::ServiceModel::GDBusClient::ReleaseConnection(void* handle)
+{
+	TFC_Log(Logger::Verbose, "GDBusClient", "Enter release connection");
+	{
+		std::unique_lock<std::mutex> lock(this->poolMutex);
+
+		--this->currentRunning;
+		this->connectionPool.push_back(handle);
+
+		// If there is too many open connection already, release some
+		TFC_Log(Logger::Verbose, "GDBusClient", "Returning the handle to pool");
+	}
+
+	this->waitFlag.notify_one();
+
+	TFC_Log(Logger::Verbose, "GDBusClient", "Exit release connection");
 }
 
 LIBAPI
@@ -1050,13 +1155,18 @@ void TFC::ServiceModel::GDBusServer::EventCaptureHandler(IServerObject<GDBusChan
 	g_variant_unref(paramArg);
 }
 
-void TFC::ServiceModel::GDBusClient::ReceiveEvent(const char* eventName,
+void TFC::ServiceModel::GDBusClient::ReceiveEvent(const char* objectPath, const char* ifaceName, const char* eventName,
 		GVariant* eventArg) {
 	auto str = g_variant_print(eventArg, true);
 	dlog_print(DLOG_DEBUG, "TFC-RPC-EVENT", "The event arg of %s is: %s", eventName, str);
 	g_free(str);
 
-	this->eventEventReceived(this, { eventName, eventArg });
+	if(objectPath == nullptr)
+		objectPath = this->objectPath.c_str();
+	if(ifaceName == nullptr)
+		ifaceName == this->interfaceName.c_str();
+
+	this->eventEventReceived(this, { objectPath, ifaceName, eventName, eventArg });
 }
 
 void TFC::ServiceModel::GDBusClient::RegisterEvent()
@@ -1064,7 +1174,7 @@ void TFC::ServiceModel::GDBusClient::RegisterEvent()
 	if(busType == G_BUS_TYPE_NONE)
 	{
 		auto conn = (GDBusConnection*)this->handle;
-		g_dbus_connection_signal_subscribe(conn, nullptr, interfaceName.c_str(), nullptr, objectPath.c_str(), nullptr, G_DBUS_SIGNAL_FLAGS_NONE, GDBusClient::GDBusConnectionReceiveSignal, this, nullptr);
+		g_dbus_connection_signal_subscribe(conn, nullptr, nullptr, nullptr, nullptr, nullptr, G_DBUS_SIGNAL_FLAGS_NONE, GDBusClient::GDBusConnectionReceiveSignal, this, nullptr);
 	}
 	else
 	{
@@ -1076,12 +1186,14 @@ void TFC::ServiceModel::GDBusClient::RegisterEvent()
 void TFC::ServiceModel::GDBusClient::GDBusProxyReceiveSignal(GDBusProxy* proxy,
 		gchar* sender_name, gchar* signal_name, GVariant* parameters,
 		gpointer user_data) {
-	static_cast<GDBusClient*>(user_data)->ReceiveEvent(signal_name, parameters);
+	static_cast<GDBusClient*>(user_data)->ReceiveEvent(nullptr, nullptr, signal_name, parameters);
 }
 
 void TFC::ServiceModel::GDBusClient::GDBusConnectionReceiveSignal(
 		GDBusConnection* connection, const gchar* sender_name,
 		const gchar* object_path, const gchar* interface_name,
 		const gchar* signal_name, GVariant* parameters, gpointer user_data) {
-	static_cast<GDBusClient*>(user_data)->ReceiveEvent(signal_name, parameters);
+	static_cast<GDBusClient*>(user_data)->ReceiveEvent(object_path, interface_name, signal_name, parameters);
 }
+
+
