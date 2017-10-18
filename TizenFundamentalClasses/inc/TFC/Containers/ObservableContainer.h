@@ -95,8 +95,6 @@ namespace Containers {
 		public EventEmitterClass<ObservableContainerBase>
 	{
 	public:
-
-
 		Event<ItemEventArgs&> eventItemInserted;
 		Event<ItemEventArgs&> eventItemRemoved;
 
@@ -234,6 +232,12 @@ namespace Containers {
 			this->container.erase(iter);
 		}
 
+		void Move(UnderlyingIterator iter, UnderlyingIterator targetPosition)
+		{
+			RaiseEventItemRemoved(std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl { iter } });
+			this->container.splice(targetPosition, this->container, iter);
+			RaiseEventItemInserted(std::unique_ptr<ContainerBase::Iterator::IteratorImpl> { new IteratorImpl { iter } });
+		}
 
 		decltype(auto) GetFirst()
 		{
